@@ -5,6 +5,9 @@ import ProtectedLayout from "./layouts/ProtectedLayout.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import CourseListPage from "./pages/CourseListPage.jsx";
 import CourseDetailPage from "./pages/CourseDetailPage.jsx";
+import CourseActivePage from "./pages/CourseActivePage.jsx";
+import StampScanPage from "./pages/StampScanPage.jsx";
+import CourseCompletePage from "./pages/CourseCompletePage.jsx";
 import RewardsPage from "./pages/RewardsPage.jsx";
 import MyPagePage from "./pages/MyPagePage.jsx";
 
@@ -23,6 +26,9 @@ export default function App() {
             <Route element={<ProtectedLayout />}>
               <Route path="courses" element={<CourseListPage />} />
               <Route path="courses/:courseId" element={<CourseDetailPage />} />
+              <Route path="enrollments/:enrollmentId" element={<CourseActivePage />} />
+              <Route path="enrollments/:enrollmentId/scan" element={<StampScanPage />} />
+              <Route path="enrollments/:enrollmentId/complete" element={<CourseCompletePage />} />
               <Route path="rewards" element={<RewardsPage />} />
               <Route path="mypage" element={<MyPagePage />} />
             </Route>

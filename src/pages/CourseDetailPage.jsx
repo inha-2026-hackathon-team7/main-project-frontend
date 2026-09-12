@@ -1,56 +1,92 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Heart, MessageCircle, Send } from "lucide-react";
+import {
+  ChevronLeft,
+  MapPin,
+  Gift,
+  Clock,
+  Navigation,
+  Compass,
+  CheckCircle,
+  Play,
+  ArrowRight,
+  Loader2,
+  Calendar,
+} from "lucide-react";
 import { COLORS } from "../constants/colors.js";
-import { mockFetch } from "../mock/api.js";
-import { MOCK_COURSE_DETAIL } from "../mock/data.js";
+import { coursesApi, enrollmentsApi } from "../services/api.js";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
 import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
-import { stampIcon } from "../components/common/stampIcon.jsx";
 
 /* ============================================================================
-   화면 3. 코스 상세 (GET /courses/{id})
+   화면 3. 코스 상세 (GET /courses/{course_id})
+   - 포함된 place 순서/목록 및 지도 핀 정보
+   - 리워드 안내 (POST /courses/{id}/enrollments 와 연결)
+   - my_enrollment_id 기준 "이어하기" vs "코스 시작하기" CTA 분기
    ========================================================================== */
+
 export default function CourseDetailPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
+
   const [mode, setMode] = useState("success");
-  const [status, setStatus] = useState("idle");
+  const [status, setStatus] = useState("loading"); // loading | success | error
   const [detail, setDetail] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [draft, setDraft] = useState("");
+  const [starting, setStarting] = useState(false);
 
   const load = useCallback(async () => {
     setStatus("loading");
     try {
-      const full = MOCK_COURSE_DETAIL[courseId] || MOCK_COURSE_DETAIL.c1;
-      const data = await mockFetch(mode, full, { ...full, stamps: [], comments: [] });
+      if (mode === "error") throw new Error("MOCK_ERROR");
+      if (mode === "empty") {
+        setDetail(null);
+        setStatus("success");
+        return;
+      }
+      const data = await coursesApi.get(courseId);
       setDetail(data);
-      setComments(data.comments);
       setStatus("success");
     } catch {
       setStatus("error");
     }
   }, [mode, courseId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const postComment = () => {
-    if (!draft.trim()) return;
-    setComments((cs) => [{ id: `local-${Date.now()}`, user: "나", text: draft.trim(), date: "방금", likes: 0 }, ...cs]);
-    setDraft("");
+  // 코스 시작하기 처리 (POST /courses/{id}/enrollments)
+  const handleStartCourse = async () => {
+    if (detail?.my_enrollment_id) {
+      navigate(`/enrollments/${detail.my_enrollment_id}`);
+      return;
+    }
+
+    setStarting(true);
+    try {
+      const res = await enrollmentsApi.start(courseId);
+      navigate(`/enrollments/${res.enrollment_id}`);
+    } catch (err) {
+      alert("코스 시작에 실패했습니다.");
+    } finally {
+      setStarting(false);
+    }
   };
 
   return (
     <>
       <div className="st-topbar">
-        <button className="st-iconbtn" onClick={() => navigate(-1)} aria-label="뒤로 가기"><ChevronLeft size={22} /></button>
+        <button className="st-iconbtn" onClick={() => navigate(-1)} aria-label="뒤로 가기">
+          <ChevronLeft size={22} />
+        </button>
         <div className="st-topbar-title">코스 상세</div>
       </div>
+
       <DevStateSwitcher mode={mode} setMode={setMode} />
-      <div className="st-scroll">
+
+      <div className="st-scroll" style={{ paddingBottom: 90 }}>
         {status === "loading" && (
           <div style={{ paddingTop: 10 }}>
             <div className="st-skel" style={{ height: 22, width: "60%", marginBottom: 10 }} />
@@ -61,81 +97,223 @@ export default function CourseDetailPage() {
 
         {status === "error" && <ErrorState onRetry={load} />}
 
+        {status === "success" && !detail && (
+          <EmptyState title="코스 정보를 찾을 수 없습니다" desc="목록으로 돌아가 확인해 주세요." />
+        )}
+
         {status === "success" && detail && (
           <>
-            <div style={{ paddingTop: 12 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>{detail.title}</div>
-              <div style={{ fontSize: 13, color: COLORS.inkSoft, marginTop: 4 }}>{detail.region} · {detail.category}</div>
-              <p style={{ fontSize: 13.5, lineHeight: 1.6, color: COLORS.ink, marginTop: 14 }}>{detail.description}</p>
-            </div>
+            {/* 코스 기본 헤더 */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <span
+                  style={{
+                    background: COLORS.surfaceAlt,
+                    padding: "3px 8px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: COLORS.inkSoft,
+                  }}
+                >
+                  {detail.region} · {detail.category}
+                </span>
 
-            <div style={{ marginTop: 22 }}>
-              <div style={{ fontWeight: 800, fontSize: 14.5, marginBottom: 10 }}>스탬프 지점</div>
-              {detail.stamps.length === 0 ? (
-                <EmptyState title="등록된 스탬프 지점이 없습니다" desc="코스 운영자가 지점을 준비 중입니다. 잠시 후 다시 확인해 주세요." />
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {detail.stamps.map((s) => (
-                    <div key={s.id} className="st-card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: 999, background: COLORS.surfaceAlt,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontWeight: 800, fontSize: 12.5, flexShrink: 0,
-                      }}>{s.order}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.name}</div>
-                        <div style={{ fontSize: 12, color: COLORS.inkSoft, marginTop: 2 }}>{s.location}</div>
-                      </div>
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: 4, fontSize: 11.5, fontWeight: 700,
-                        color: COLORS.inkSoft, background: COLORS.surfaceAlt, borderRadius: 999, padding: "5px 10px",
-                      }}>
-                        {stampIcon(s.type)}{s.type}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ marginTop: 26 }}>
-              <div style={{ fontWeight: 800, fontSize: 14.5, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-                <MessageCircle size={16} />의견 나누기 ({comments.length})
+                {detail.is_ordered && (
+                  <span
+                    style={{
+                      background: "rgba(49, 130, 246, 0.1)",
+                      color: COLORS.seal,
+                      padding: "3px 8px",
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                  >
+                    순서형 코스
+                  </span>
+                )}
               </div>
 
-              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                <input
-                  className="st-input" placeholder="이 코스에 대한 생각을 남겨보세요"
-                  value={draft} onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && postComment()}
-                />
-                <button className="st-iconbtn" style={{ background: COLORS.seal, color: "#fff", borderRadius: 12 }} onClick={postComment} aria-label="댓글 등록">
-                  <Send size={17} />
-                </button>
+              <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.ink, marginBottom: 8, lineHeight: 1.3 }}>
+                {detail.name}
               </div>
 
-              {comments.length === 0 ? (
-                <EmptyState title="아직 댓글이 없습니다" desc="이 코스를 다녀온 첫 번째 이야기를 남겨보세요." />
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {comments.map((c) => (
-                    <div key={c.id} style={{ borderBottom: `1px solid ${COLORS.line}`, paddingBottom: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
-                        <span style={{ fontWeight: 700 }}>{c.user}</span>
-                        <span style={{ color: COLORS.inkSoft }}>{c.date}</span>
+              <p style={{ fontSize: 14, color: COLORS.inkSoft, lineHeight: 1.55, margin: "0 0 14px" }}>
+                {detail.description}
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  background: COLORS.surface,
+                  padding: "12px 16px",
+                  borderRadius: 14,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: COLORS.ink,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <MapPin size={15} color={COLORS.seal} />
+                  <span>스탬프 {detail.places?.length}곳</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <Navigation size={15} color={COLORS.seal} />
+                  <span>{detail.distance || "2.4km"}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <Clock size={15} color={COLORS.seal} />
+                  <span>약 {detail.durationMin || 60}분 소요</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 리워드 정보 카드 */}
+            {detail.reward && (
+              <div
+                className="st-card"
+                style={{
+                  background: "linear-gradient(135deg, #FFF9F5, #FFF3EB)",
+                  border: `1.5px solid ${COLORS.gold}`,
+                  marginBottom: 20,
+                  display: "flex",
+                  gap: 14,
+                  alignItems: "center",
+                }}
+              >
+                {detail.reward.image_url && (
+                  <div
+                    style={{
+                      width: 68,
+                      height: 68,
+                      borderRadius: 12,
+                      backgroundImage: `url(${detail.reward.image_url})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: COLORS.gold, marginBottom: 3 }}>
+                    🎁 코스 완주 리워드
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: COLORS.ink, marginBottom: 3 }}>
+                    {detail.reward.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: COLORS.inkSoft, lineHeight: 1.4 }}>
+                    {detail.reward.description}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 포함된 장소(Places) 순서/목록 */}
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.ink, marginBottom: 12 }}>
+                방문 장소 코스 안내 ({detail.places?.length || 0}곳)
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {detail.places?.map((p, idx) => (
+                  <div
+                    key={p.course_place_id}
+                    className="st-card"
+                    style={{ display: "flex", gap: 14, padding: "14px" }}
+                  >
+                    {/* 번호 핀 */}
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: "50%",
+                        background: COLORS.seal,
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 800,
+                        fontSize: 14,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {p.visit_order || idx + 1}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: COLORS.ink, marginBottom: 4 }}>
+                        {p.name}
                       </div>
-                      <div style={{ fontSize: 13.5, marginTop: 4, lineHeight: 1.5 }}>{c.text}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, color: COLORS.inkSoft, fontSize: 12 }}>
-                        <Heart size={13} />{c.likes}
+                      <div style={{ fontSize: 13, color: COLORS.inkSoft, lineHeight: 1.4, marginBottom: 6 }}>
+                        {p.description}
+                      </div>
+                      <div style={{ fontSize: 11, color: COLORS.seal, fontWeight: 700 }}>
+                        QR 스캔 + GPS 반경 50m 인증
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+
+                    {p.image_url && (
+                      <div
+                        style={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: 10,
+                          backgroundImage: `url(${p.image_url})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </>
         )}
       </div>
+
+      {/* 하단 고정 CTA 버튼 */}
+      {status === "success" && detail && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: "14px 20px 20px",
+            background: "linear-gradient(to top, rgba(242,244,246,1) 80%, rgba(242,244,246,0))",
+          }}
+        >
+          <button
+            className="st-btn"
+            onClick={handleStartCourse}
+            disabled={starting}
+            style={{
+              background: detail.my_enrollment_id ? COLORS.seal : COLORS.ink,
+            }}
+          >
+            {starting ? (
+              <Loader2 size={18} className="st-spin" />
+            ) : detail.my_enrollment_id ? (
+              <Play size={18} />
+            ) : (
+              <Compass size={18} />
+            )}
+            <span>
+              {starting
+                ? "시작하는 중..."
+                : detail.my_enrollment_id
+                ? "이어서 코스 진행하기"
+                : "이 코스 시작하기"}
+            </span>
+            <ArrowRight size={17} />
+          </button>
+        </div>
+      )}
     </>
   );
 }

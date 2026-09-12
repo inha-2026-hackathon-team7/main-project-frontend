@@ -226,9 +226,128 @@ export default function GlobalStyle() {
     }
     .st-devbtn[data-active="true"] { background: ${COLORS.ink}; color: ${COLORS.surface}; }
 
+    /* Map Styles */
+    .st-map-container {
+      width: 100%;
+      height: 280px;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      background: #e5e9ec;
+      box-shadow: 0 4px 16px rgba(25, 31, 40, 0.06);
+    }
+    .st-map-full {
+      width: 100%;
+      height: 100%;
+    }
+    .st-map-pin {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: ${COLORS.surface};
+      color: ${COLORS.ink};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+      border: 2.5px solid ${COLORS.seal};
+      transition: transform 0.2s;
+    }
+    .st-map-pin.done {
+      background: ${COLORS.leaf};
+      border-color: #ffffff;
+      color: #ffffff;
+    }
+    .st-map-pin.target {
+      background: ${COLORS.seal};
+      border-color: #ffffff;
+      color: #ffffff;
+      transform: scale(1.15);
+      animation: st-pin-bounce 1.4s infinite ease-in-out;
+    }
+    .st-user-marker {
+      width: 18px;
+      height: 18px;
+      background: #2272EB;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(34,114,235,0.7);
+      position: relative;
+    }
+    .st-user-marker::after {
+      content: "";
+      position: absolute;
+      top: -8px; left: -8px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(34,114,235,0.3);
+      animation: st-pulse 2s infinite ease-out;
+    }
+    @keyframes st-pulse {
+      0% { transform: scale(0.6); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    @keyframes st-pin-bounce {
+      0%, 100% { transform: scale(1.15) translateY(0); }
+      50% { transform: scale(1.15) translateY(-5px); }
+    }
+
+    /* Progress bar */
+    .st-progress-track {
+      width: 100%;
+      height: 8px;
+      background: ${COLORS.surfaceAlt};
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .st-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, ${COLORS.seal}, #00C48C);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    /* Stamp Animations */
+    @keyframes st-stamp-slam {
+      0% { transform: scale(2.6) rotate(-15deg); opacity: 0; }
+      60% { transform: scale(0.92) rotate(4deg); opacity: 1; }
+      80% { transform: scale(1.04) rotate(-1deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .st-stamp-animate {
+      animation: st-stamp-slam 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* Scanner Viewfinder */
+    .st-scanner-box {
+      width: 220px;
+      height: 220px;
+      border: 3px solid ${COLORS.seal};
+      border-radius: 24px;
+      position: relative;
+      box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+    }
+    .st-scanner-laser {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #3182F6, transparent);
+      box-shadow: 0 0 10px #3182F6;
+      animation: st-laser 2s infinite ease-in-out;
+    }
+    @keyframes st-laser {
+      0% { top: 5%; }
+      50% { top: 92%; }
+      100% { top: 5%; }
+    }
 
     @media (prefers-reduced-motion: reduce) {
-      .st-skel, .st-spin { animation: none; }
+      .st-skel, .st-spin, .st-stamp-animate, .st-scanner-laser, .st-map-pin.target { animation: none; }
     }
   `}</style>
   );

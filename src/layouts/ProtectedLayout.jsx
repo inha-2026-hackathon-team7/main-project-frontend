@@ -2,7 +2,8 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import BottomNav from "../components/BottomNav.jsx";
 
-const DETAIL_ROUTE = /^\/courses\/[^/]+$/;
+// 코스 상세 및 코스 진행/스캔/완주 화면에서는 하단 탭바를 숨겨 몰입감 제공
+const HIDE_BOTTOM_NAV_ROUTE = /^(\/courses\/[^/]+|\/enrollments\/[^/]+)/;
 
 export default function ProtectedLayout() {
   const { user } = useAuth();
@@ -12,12 +13,12 @@ export default function ProtectedLayout() {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  const isDetailScreen = DETAIL_ROUTE.test(location.pathname);
+  const hideBottomNav = HIDE_BOTTOM_NAV_ROUTE.test(location.pathname);
 
   return (
     <>
       <Outlet />
-      {!isDetailScreen && <BottomNav />}
+      {!hideBottomNav && <BottomNav />}
     </>
   );
 }

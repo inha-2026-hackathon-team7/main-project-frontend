@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
-import { delay } from "../mock/api.js";
+import { authApi } from "../services/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 /* ============================================================================
@@ -58,13 +58,20 @@ export default function AuthPage() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      // POST /auth/login 또는 POST /auth/register 목업 호출
-      await delay(700);
-      // 데모용: "fail@test.com"으로 로그인 시도 시 실패 케이스 재현
-      if (form.email === "fail@test.com") {
-        throw new Error("INVALID_CREDENTIALS");
+      if (tab === "login") {
+        if (form.email === "fail@test.com") {
+          throw new Error("INVALID_CREDENTIALS");
+        }
+        const res = await authApi.login({ email: form.email, password: form.password });
+        handleAuthed(res.user);
+      } else {
+        const res = await authApi.register({
+          name: form.nickname,
+          email: form.email,
+          password: form.password,
+        });
+        handleAuthed({ id: res.user_id, name: res.name, email: res.email, role: "user" });
       }
-      handleAuthed({ email: form.email, nickname: form.nickname || form.email.split("@")[0] });
     } catch (err) {
       setSubmitError(
         tab === "login"

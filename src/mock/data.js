@@ -1,54 +1,216 @@
 /* ============================================================================
-   Mock 데이터
-   백엔드 API 명세서(P0)의 Response 필드 구조를 그대로 따르는 더미 데이터.
+   API 명세서(P0) 기준 초기 Mock 데이터
+   실제 한국 명소의 위도/경도 좌표 및 QR 식별자 포함
    ========================================================================== */
-export const MOCK_COURSES = [
-  { id: "c1", title: "영도 해안 벽화 골목", region: "부산 영도구", category: "예술/벽화", distance: "2.4km", durationMin: 70, stampCount: 4, summary: "바다를 낀 좁은 골목마다 숨은 벽화를 따라 걷는 코스", tag: "인기" },
-  { id: "c2", title: "청년몰 야시장 먹부림", region: "전주 완산구", category: "먹거리", distance: "1.1km", durationMin: 50, stampCount: 3, summary: "청년 상인들이 운영하는 야시장 상점을 도장 깨듯 방문", tag: "신규" },
-  { id: "c3", title: "폐역이 된 간이역 기행", region: "정선군", category: "역사/철도", distance: "6.8km", durationMin: 140, stampCount: 5, summary: "운행을 멈춘 간이역 다섯 곳을 잇는 반나절 여정", tag: null },
-  { id: "c4", title: "동네 책방 지도", region: "제주 조천읍", category: "문화/서점", distance: "3.2km", durationMin: 90, stampCount: 4, summary: "각기 다른 개성의 독립서점을 돌며 도장을 모으는 코스", tag: null },
-];
 
-export const MOCK_COURSE_DETAIL = {
-  c1: {
-    id: "c1", title: "영도 해안 벽화 골목", region: "부산 영도구", category: "예술/벽화",
+export const INITIAL_COURSES = [
+  {
+    id: "c1",
+    name: "영도 해안 벽화 골목",
+    type: "official",
+    view_count: 1420,
+    region: "부산 영도구",
+    category: "예술/벽화",
+    distance: "2.4km",
+    durationMin: 70,
+    thumbnail_url: "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=600&auto=format&fit=crop&q=80",
+    reward_summary: "흰여울 카페 아메리카노 교환권",
     description: "흰여울문화마을부터 절영해안산책로까지, 주민들이 직접 그린 벽화 12점이 남아있는 좁은 골목을 따라 걷습니다. 스탬프 4개를 모두 찍으면 완주 리워드가 발급됩니다.",
-    stamps: [
-      { id: "s1", order: 1, name: "흰여울 전망대", type: "GPS", location: "부산 영도구 흰여울길 전망대 앞" },
-      { id: "s2", order: 2, name: "물양장 벽화거리", type: "QR", location: "안내판 하단 QR 코드 스캔" },
-      { id: "s3", order: 3, name: "절영 서점", type: "NFC", location: "서점 카운터 옆 NFC 태그" },
-      { id: "s4", order: 4, name: "감지해변 포토존", type: "GPS", location: "부산 영도구 감지해변로" },
-    ],
-    comments: [
-      { id: "m1", user: "바다냥", text: "골목이 진짜 예뻐요, 3번째 스탬프 서점에서 커피도 팔아요", date: "9.10", likes: 6 },
-      { id: "m2", user: "해운대러버", text: "저녁 노을 시간대 추천합니다", date: "9.11", likes: 3 },
+    is_ordered: true,
+    reward: {
+      name: "영도 흰여울 카페 아메리카노 교환권",
+      description: "흰여울 문화마을 인근 제휴 카페에서 즉시 사용 가능한 음료 교환권입니다.",
+      image_url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop&q=80",
+      valid_days: 30,
+    },
+    places: [
+      {
+        course_place_id: "cp1_1",
+        place_id: "p1",
+        name: "흰여울 전망대",
+        lat: 35.0772,
+        lng: 129.0441,
+        visit_order: 1,
+        image_url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=80",
+        description: "영도 앞바다와 남항대교가 한눈에 펼쳐지는 첫 번째 전망 쉼터",
+        qrcode_string: "STARTON-QR-c1-cp1_1",
+      },
+      {
+        course_place_id: "cp1_2",
+        place_id: "p2",
+        name: "물양장 벽화거리",
+        lat: 35.0805,
+        lng: 129.0412,
+        visit_order: 2,
+        image_url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=500&auto=format&fit=crop&q=80",
+        description: "옛 어촌의 역사와 바다 생물들이 그려진 아기자기한 벽화 골목",
+        qrcode_string: "STARTON-QR-c1-cp1_2",
+      },
+      {
+        course_place_id: "cp1_3",
+        place_id: "p3",
+        name: "절영 독립서점",
+        lat: 35.0831,
+        lng: 129.0385,
+        visit_order: 3,
+        image_url: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=500&auto=format&fit=crop&q=80",
+        description: "바다 냄새와 책 향기가 어우러진 작은 문화 공간",
+        qrcode_string: "STARTON-QR-c1-cp1_3",
+      },
+      {
+        course_place_id: "cp1_4",
+        place_id: "p4",
+        name: "감지해변 노을 포토존",
+        lat: 35.0870,
+        lng: 129.0340,
+        visit_order: 4,
+        image_url: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=500&auto=format&fit=crop&q=80",
+        description: "코스의 종착지, 탁 트인 수평선 너머 붉은 노을을 감상할 수 있는 명소",
+        qrcode_string: "STARTON-QR-c1-cp1_4",
+      },
     ],
   },
-  c2: {
-    id: "c2", title: "청년몰 야시장 먹부림", region: "전주 완산구", category: "먹거리",
-    description: "전주 청년몰 야시장의 이색 먹거리 상점 세 곳을 방문하고 도장을 모으는 코스입니다.",
-    stamps: [
-      { id: "s1", order: 1, name: "가맥 포차", type: "QR", location: "매대 앞 QR 스티커" },
-      { id: "s2", order: 2, name: "수제 소떡 노점", type: "NFC", location: "계산대 NFC 태그" },
-      { id: "s3", order: 3, name: "야시장 중앙광장", type: "GPS", location: "전주 완산구 청년몰 중앙광장" },
+  {
+    id: "c2",
+    name: "전주 청년몰 야시장 먹부림",
+    type: "user",
+    view_count: 852,
+    region: "전주 완산구",
+    category: "먹거리",
+    distance: "1.1km",
+    durationMin: 50,
+    thumbnail_url: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80",
+    reward_summary: "완산 청년몰 5,000원 할인권",
+    description: "전주 남부시장 청년몰의 개성 넘치는 먹거리 상점을 도장 깨듯 방문하고 즐기는 식도락 코스입니다.",
+    is_ordered: false,
+    reward: {
+      name: "청년몰 야시장 5,000원 바우처",
+      description: "청년몰 내 모든 참여 상점에서 현금처럼 사용 가능합니다.",
+      image_url: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80",
+      valid_days: 14,
+    },
+    places: [
+      {
+        course_place_id: "cp2_1",
+        place_id: "p2_1",
+        name: "가맥 포차 거리",
+        lat: 35.8130,
+        lng: 127.1480,
+        visit_order: 1,
+        image_url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=80",
+        description: "바삭한 황태와 특제 소스로 유명한 가맥집",
+        qrcode_string: "STARTON-QR-c2-cp2_1",
+      },
+      {
+        course_place_id: "cp2_2",
+        place_id: "p2_2",
+        name: "수제 소떡 청년상회",
+        lat: 35.8138,
+        lng: 127.1492,
+        visit_order: 2,
+        image_url: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=500&auto=format&fit=crop&q=80",
+        description: "전통 쌀떡으로 구워낸 매콤달콤 소떡소떡",
+        qrcode_string: "STARTON-QR-c2-cp2_2",
+      },
+      {
+        course_place_id: "cp2_3",
+        place_id: "p2_3",
+        name: "남부시장 청년 쉼터",
+        lat: 35.8145,
+        lng: 127.1505,
+        visit_order: 3,
+        image_url: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&auto=format&fit=crop&q=80",
+        description: "음식을 테이크아웃해 즐길 수 있는 야시장 중앙 테이블 광장",
+        qrcode_string: "STARTON-QR-c2-cp2_3",
+      },
     ],
-    comments: [],
   },
-};
-
-export const MOCK_REWARDS = [
-  { id: "r1", title: "영도 흰여울 카페 아메리카노 교환권", region: "부산 영도구", code: "YD-2291", status: "unused", expiresAt: "2026-10-31", courseTitle: "영도 해안 벽화 골목" },
-  { id: "r2", title: "완산 청년몰 상품권 5,000원", region: "전주 완산구", code: "JJ-1183", status: "used", expiresAt: "2026-09-30", courseTitle: "청년몰 야시장 먹부림" },
-  { id: "r3", title: "정선 간이역 기념 배지", region: "정선군", code: "JS-0042", status: "unused", expiresAt: "2026-12-31", courseTitle: "폐역이 된 간이역 기행" },
+  {
+    id: "c3",
+    name: "AI 추천: 숲길과 간이역 힐링 기행",
+    type: "ai",
+    view_count: 2130,
+    region: "강원 정선군",
+    category: "자연/역사",
+    distance: "5.2km",
+    durationMin: 120,
+    thumbnail_url: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop&q=80",
+    reward_summary: "정선 특산물 메밀전병 교환권",
+    description: "생성형 AI가 사용자의 조용한 산책 취향을 분석해 추천한 폐역과 피톤치드 전나무 숲길 코스입니다.",
+    is_ordered: true,
+    reward: {
+      name: "정선 아우라지 메밀전병 세트 교환권",
+      description: "정선 5일장 먹거리 골목에서 교환 가능한 특산물 쿠폰입니다.",
+      image_url: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop&q=80",
+      valid_days: 60,
+    },
+    places: [
+      {
+        course_place_id: "cp3_1",
+        place_id: "p3_1",
+        name: "나전역 레트로 카페",
+        lat: 37.4532,
+        lng: 128.6941,
+        visit_order: 1,
+        image_url: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=500&auto=format&fit=crop&q=80",
+        description: "추억의 간이역 대합실을 보존한 힐링 카페",
+        qrcode_string: "STARTON-QR-c3-cp3_1",
+      },
+      {
+        course_place_id: "cp3_2",
+        place_id: "p3_2",
+        name: "아우라지 철길 다리",
+        lat: 37.4580,
+        lng: 128.7010,
+        visit_order: 2,
+        image_url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&auto=format&fit=crop&q=80",
+        description: "두 강물이 만나는 수려한 절경 위의 옛 철교",
+        qrcode_string: "STARTON-QR-c3-cp3_2",
+      },
+    ],
+  },
 ];
 
-export const MOCK_USER = {
-  name: "김도장", email: "stamp.kim@example.com", level: "여행 3단",
-  joinedAt: "2026.03", totalStamps: 27, completedCourses: 3,
+export const INITIAL_USER = {
+  id: "u_demo123",
+  name: "김도장",
+  email: "demo@example.com",
+  role: "user",
+  level: "스탬프 마스터 Lv.3",
+  joined_at: "2026.03",
 };
 
-export const MOCK_ENROLLMENTS = [
-  { id: "e1", courseId: "c1", courseTitle: "영도 해안 벽화 골목", region: "부산 영도구", status: "in_progress", stampedCount: 2, totalStamps: 4 },
-  { id: "e2", courseId: "c2", courseTitle: "청년몰 야시장 먹부림", region: "전주 완산구", status: "completed", stampedCount: 3, totalStamps: 3 },
-  { id: "e3", courseId: "c4", courseTitle: "동네 책방 지도", region: "제주 조천읍", status: "in_progress", stampedCount: 1, totalStamps: 4 },
+export const INITIAL_ENROLLMENTS = [
+  {
+    enrollment_id: "enr_demo_1",
+    course_id: "c1",
+    course_name: "영도 해안 벽화 골목",
+    status: "active",
+    stamped_course_place_ids: ["cp1_1"],
+    total_places: 4,
+    started_at: "2026-09-12T10:00:00Z",
+    completed_at: null,
+  },
+  {
+    enrollment_id: "enr_demo_2",
+    course_id: "c2",
+    course_name: "전주 청년몰 야시장 먹부림",
+    status: "complete",
+    stamped_course_place_ids: ["cp2_1", "cp2_2", "cp2_3"],
+    total_places: 3,
+    started_at: "2026-09-10T14:20:00Z",
+    completed_at: "2026-09-10T16:10:00Z",
+  },
+];
+
+export const INITIAL_REWARDS = [
+  {
+    claim_id: "rc_demo_1",
+    reward_name: "완산 청년몰 5,000원 할인권",
+    image_url: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80",
+    status: "unused",
+    code: "JJ-MALL-9821",
+    valid_until: "2026-10-31",
+    claimed_at: "2026-09-10T16:12:00Z",
+  },
 ];
