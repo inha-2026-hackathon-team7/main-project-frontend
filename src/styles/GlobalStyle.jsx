@@ -1,0 +1,235 @@
+import { COLORS } from "../constants/colors.js";
+
+/* ============================================================================
+   전역 스타일
+   ========================================================================== */
+export default function GlobalStyle() {
+  return (
+    <style>{`
+    .st-root {
+      background: ${COLORS.paper};
+      color: ${COLORS.ink};
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+        "Pretendard", "Malgun Gothic", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 12px;
+      box-sizing: border-box;
+    }
+    .st-frame {
+      width: 100%;
+      max-width: 430px;
+      background: ${COLORS.paper};
+      border-radius: 28px;
+      box-shadow: 0 1px 2px rgba(25,31,40,0.04), 0 16px 40px rgba(25,31,40,0.12);
+      overflow: hidden;
+      position: relative;
+      min-height: 780px;
+      display: flex;
+      flex-direction: column;
+    }
+    .st-topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 20px 14px;
+      flex-shrink: 0;
+      background: ${COLORS.paper};
+    }
+    .st-topbar-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      flex: 1;
+    }
+    .st-iconbtn {
+      background: none;
+      border: none;
+      padding: 6px;
+      margin: -6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      color: ${COLORS.ink};
+      cursor: pointer;
+    }
+    .st-iconbtn:hover { background: rgba(25,31,40,0.05); }
+    .st-iconbtn:focus-visible { outline: 2px solid ${COLORS.seal}; outline-offset: 2px; }
+
+    .st-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 20px 100px;
+    }
+
+    .st-card {
+      background: ${COLORS.surface};
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(25,31,40,0.04), 0 2px 12px rgba(25,31,40,0.05);
+    }
+
+    .st-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      border: none;
+      background: ${COLORS.surface};
+      color: ${COLORS.inkSoft};
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .st-chip[data-active="true"] {
+      background: ${COLORS.seal};
+      color: #FFFFFF;
+    }
+    .st-chip:focus-visible { outline: 2px solid ${COLORS.seal}; outline-offset: 2px; }
+
+    .st-btn-primary {
+      width: 100%;
+      background: ${COLORS.seal};
+      color: #FFFFFF;
+      border: none;
+      border-radius: 16px;
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .st-btn-primary:hover { background: ${COLORS.sealDark}; }
+    .st-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .st-btn-primary:focus-visible { outline: 2px solid ${COLORS.ink}; outline-offset: 2px; }
+
+    .st-btn-ghost {
+      background: ${COLORS.surfaceAlt};
+      border: none;
+      color: ${COLORS.ink};
+      border-radius: 16px;
+      padding: 13px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .st-btn-ghost:hover { background: #E5E8EB; }
+    .st-btn-ghost:focus-visible { outline: 2px solid ${COLORS.seal}; outline-offset: 2px; }
+
+    .st-input {
+      width: 100%;
+      background: ${COLORS.surfaceAlt};
+      border: 1.5px solid transparent;
+      border-radius: 14px;
+      padding: 14px 15px;
+      font-size: 15px;
+      color: ${COLORS.ink};
+      box-sizing: border-box;
+    }
+    .st-input:focus-visible, .st-input:focus {
+      outline: none;
+      border-color: ${COLORS.seal};
+      background: ${COLORS.surface};
+    }
+    .st-input::placeholder { color: #B0B8C1; }
+    .st-input[data-error="true"] { border-color: ${COLORS.danger}; }
+
+    .st-label {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: ${COLORS.inkSoft};
+      margin-bottom: 6px;
+      display: block;
+    }
+    .st-fieldmsg { font-size: 12px; color: ${COLORS.danger}; margin-top: 5px; font-weight: 600; }
+
+    .st-bottomnav {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      background: ${COLORS.surface};
+      box-shadow: 0 -1px 0 rgba(25,31,40,0.05), 0 -8px 24px rgba(25,31,40,0.05);
+      display: flex;
+      padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+    .st-navitem {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      padding: 6px 0;
+      cursor: pointer;
+      color: #B0B8C1;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 10px;
+    }
+    .st-navitem[data-active="true"] { color: ${COLORS.seal}; }
+    .st-navitem:focus-visible { outline: 2px solid ${COLORS.seal}; outline-offset: -2px; }
+
+    /* 스탬프 카운트 배지 - 포인트 컬러를 꽉 채운 원형 배지 */
+    .st-stamp {
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      background: ${COLORS.seal};
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .st-usedstamp { opacity: 0.55; }
+
+    .st-skel {
+      background: linear-gradient(90deg, #EDEEF0 25%, #E1E4E8 50%, #EDEEF0 75%);
+      background-size: 200% 100%;
+      animation: st-shimmer 1.3s infinite;
+      border-radius: 12px;
+    }
+    @keyframes st-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .st-spin { animation: st-spin 0.9s linear infinite; }
+    @keyframes st-spin { to { transform: rotate(360deg); } }
+
+    .st-devbar {
+      display: flex;
+      gap: 6px;
+      padding: 10px 20px;
+      flex-wrap: wrap;
+      background: #E8EBEF;
+    }
+    .st-devbtn {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: none;
+      background: ${COLORS.surface};
+      color: ${COLORS.inkSoft};
+      cursor: pointer;
+    }
+    .st-devbtn[data-active="true"] { background: ${COLORS.ink}; color: ${COLORS.surface}; }
+
+
+    @media (prefers-reduced-motion: reduce) {
+      .st-skel, .st-spin { animation: none; }
+    }
+  `}</style>
+  );
+}
