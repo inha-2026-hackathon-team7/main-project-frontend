@@ -15,6 +15,10 @@ import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
    참고: 백엔드가 매장 사용 완료 처리 API와 교환 코드 필드를 아직 제공하지 않아,
    "사용완료 처리"는 로컬 상태로만 반영되고(새로고침 시 초기화), 바코드 하단 번호는
    claimId 기반으로 결정적으로 생성한 10자리 숫자를 mock으로 표시한다.
+   status 값은 실제로 "claimed"(수령 직후, 사용 가능)로 내려오는 것을 확인했고
+   "사용완료"에 해당하는 실제 문자열은 아직 관측되지 않아, 일단 "used"라고 가정하고
+   그 외 값은 전부 미사용으로 취급한다. 실제 사용완료 상태를 보게 되면 값을 확인해서
+   isRewardUsed()만 고치면 된다.
    ========================================================================== */
 
 // claimId를 시드로 항상 같은 10자리 숫자를 만들어내는 간단한 해시 (진짜 랜덤 대신 안정적으로 표시되도록)
@@ -23,6 +27,10 @@ function mockBarcodeCode(seed) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   return String(h % 10000000000).padStart(10, "0");
+}
+
+function isRewardUsed(status) {
+  return status?.toLowerCase() === "used";
 }
 
 export default function RewardsPage() {
@@ -61,7 +69,9 @@ export default function RewardsPage() {
     setSelectedReward(null);
   };
 
-  const filtered = rewards.filter((r) => r.status?.toLowerCase() === tab);
+  const filtered = rewards.filter((r) =>
+    tab === "used" ? isRewardUsed(r.status) : !isRewardUsed(r.status)
+  );
 
   return (
     <>
@@ -125,7 +135,7 @@ export default function RewardsPage() {
         {status === "success" && filtered.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }}>
             {filtered.map((r) => {
-              const isUnused = r.status?.toLowerCase() === "unused";
+              const isUnused = !isRewardUsed(r.status);
 
               return (
                 <div
