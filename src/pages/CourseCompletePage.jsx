@@ -6,15 +6,29 @@ import {
   Gift,
   ArrowRight,
   Sparkles,
-  PartyPopper,
   Loader2,
   Calendar,
   Compass,
+  User,
 } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
 import { enrollmentsApi, rewardsApi } from "../services/api.js";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
+
+const DEFAULT_REWARD = {
+  name: "완주 기념 교환권",
+  description: "제휴 상점에서 사용 가능한 모바일 쿠폰입니다.",
+  imageUrl: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop&q=80",
+  validUntil: null,
+};
+
+function formatValidUntil(reward) {
+  if (!reward.validUntil) return "발급 후 리워드함에서 유효기간을 확인해 주세요";
+  const d = new Date(reward.validUntil);
+  if (Number.isNaN(d.getTime())) return "발급 후 리워드함에서 유효기간을 확인해 주세요";
+  return `${d.toLocaleDateString("ko-KR")} 까지 유효`;
+}
 
 /* ============================================================================
    화면 8. 코스 완주 → 리워드 수령 (POST /reward-claims)
@@ -37,7 +51,7 @@ export default function CourseCompletePage() {
   const loadInfo = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await enrollmentsApi.get(enrollmentId);
+      const data = await enrollmentsApi.getWithCourse(enrollmentId);
       setEnrollment(data);
     } catch (e) {
       setError("코스 정보를 불러올 수 없습니다.");
@@ -82,12 +96,7 @@ export default function CourseCompletePage() {
   }
 
   const course = enrollment?.course;
-  const reward = course?.reward || {
-    name: "완주 기념 교환권",
-    description: "제휴 상점에서 사용 가능한 모바일 쿠폰입니다.",
-    image_url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop&q=80",
-    valid_days: 30,
-  };
+  const reward = course?.reward || DEFAULT_REWARD;
 
   return (
     <div
@@ -140,10 +149,10 @@ export default function CourseCompletePage() {
           </div>
 
           <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.ink, marginBottom: 6 }}>
-            {enrollment?.course_name} 완주!
+            {enrollment?.courseName} 완주!
           </div>
           <div style={{ fontSize: 13, color: COLORS.inkSoft }}>
-            모든 스탬프({enrollment?.total_places}곳)를 성공적으로 수집하셨습니다.
+            모든 스탬프({enrollment?.totalPlaces}곳)를 성공적으로 수집하셨습니다.
           </div>
         </div>
 
@@ -157,11 +166,11 @@ export default function CourseCompletePage() {
             border: `1.5px solid ${COLORS.gold}`,
           }}
         >
-          {reward.image_url && (
+          {reward.imageUrl && (
             <div
               style={{
                 height: 140,
-                backgroundImage: `url(${reward.image_url})`,
+                backgroundImage: `url(${reward.imageUrl})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
@@ -191,7 +200,7 @@ export default function CourseCompletePage() {
               }}
             >
               <Calendar size={14} color={COLORS.inkSoft} />
-              <span>유효기간: 발급일로부터 {reward.valid_days || 30}일간 유효</span>
+              <span>{formatValidUntil(reward)}</span>
             </div>
           </div>
         </div>
@@ -229,7 +238,7 @@ export default function CourseCompletePage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {!claimResult ? (
           <button
-            className="st-btn"
+            className="st-btn-primary"
             style={{ background: COLORS.gold }}
             onClick={handleClaimReward}
             disabled={claiming}
@@ -240,7 +249,7 @@ export default function CourseCompletePage() {
         ) : (
           <>
             <button
-              className="st-btn"
+              className="st-btn-primary"
               onClick={() => navigate("/rewards")}
             >
               <Gift size={18} />
@@ -256,6 +265,26 @@ export default function CourseCompletePage() {
             </button>
           </>
         )}
+
+        {/* 나가기: 완주 화면에는 뒤로가기 동선이 없으므로 마이페이지/리워드함으로 바로 빠져나갈 수 있는 버튼 제공 */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            className="st-btn-ghost"
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+            onClick={() => navigate("/mypage")}
+          >
+            <User size={15} />
+            <span>마이페이지로</span>
+          </button>
+          <button
+            className="st-btn-ghost"
+            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+            onClick={() => navigate("/rewards")}
+          >
+            <Gift size={15} />
+            <span>리워드함으로</span>
+          </button>
+        </div>
       </div>
     </div>
   );

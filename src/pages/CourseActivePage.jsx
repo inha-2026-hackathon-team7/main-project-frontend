@@ -2,13 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ChevronLeft,
-  Compass,
   MapPin,
   QrCode,
   CheckCircle2,
   Gift,
   LocateFixed,
-  AlertCircle,
 } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
 import { enrollmentsApi, calculateDistanceMeters } from "../services/api.js";
@@ -18,7 +16,7 @@ import ErrorState from "../components/common/ErrorState.jsx";
 import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
 
 /* ============================================================================
-   화면 4. 코스 진행 화면 (GET /enrollments/{id})
+   화면 4. 코스 진행 화면 (GET /enrollments/{id} — course/places/reward 포함 응답)
    - 지도(CourseMap) 기반 장소 마킹 + 내 위치 표시
    - 다음 방문지 안내 카드
    - 스탬프 진행률 (예: 1/4 완료, 프로그레스 바)
@@ -26,7 +24,7 @@ import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
    ========================================================================== */
 
 export default function CourseActivePage() {
-  const { enrollmentId } = useParams();
+  const { courseId, enrollmentId } = useParams();
   const navigate = useNavigate();
 
   const [mode, setMode] = useState("success");
@@ -40,14 +38,14 @@ export default function CourseActivePage() {
     setStatus("loading");
     try {
       if (mode === "error") throw new Error("NETWORK_ERROR");
-      const res = await enrollmentsApi.get(enrollmentId);
+      const res = await enrollmentsApi.getWithCourse(enrollmentId);
       setData(res);
 
       // 기본적으로 첫 번째나 다음 목표 장소 근처(30m 안쪽)로 시뮬레이션 위치를 초기에 맞춰둠
-      if (res.next_place) {
+      if (res.nextPlace) {
         setUserLocation({
-          lat: res.next_place.lat - 0.00025, // 약 28m 거리
-          lng: res.next_place.lng + 0.00015,
+          lat: res.nextPlace.lat - 0.00025, // 약 28m 거리
+          lng: res.nextPlace.lng + 0.00015,
         });
       }
       setStatus("success");
@@ -61,28 +59,10 @@ export default function CourseActivePage() {
     loadData();
   }, [loadData]);
 
-  // 실제 브라우저 GPS 위치 가져오기
-  const fetchRealGps = () => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLocation({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
-          setLocationSimulated(false);
-        },
-        (err) => {
-          console.warn("GPS failed, using target nearby simulation", err);
-        }
-      );
-    }
-  };
-
   // 데모 위치 토글 (장소 바로 앞 25m vs 먼 거리 300m)
   const toggleSimulationDistance = () => {
-    if (!data || !data.next_place) return;
-    const target = data.next_place;
+    if (!data || !data.nextPlace) return;
+    const target = data.nextPlace;
     if (locationSimulated) {
       // 300m 밖 (인증 실패 케이스 테스트용)
       setUserLocation({
@@ -129,20 +109,20 @@ export default function CourseActivePage() {
     );
   }
 
-  const { course, next_place, stamped_course_place_ids, total_places } = data;
+  const { course, courseName, nextPlace, stampedCoursePlaceIds, totalPlaces } = data;
   const places = course?.places || [];
-  const stampedCount = stamped_course_place_ids?.length || 0;
-  const progressPercent = Math.round((stampedCount / Math.max(total_places, 1)) * 100);
-  const isCompleted = data.status === "complete" || stampedCount >= total_places;
+  const stampedCount = stampedCoursePlaceIds?.length || 0;
+  const progressPercent = Math.round((stampedCount / Math.max(totalPlaces, 1)) * 100);
+  const isCompleted = Boolean(data.completedAt) || stampedCount >= totalPlaces;
 
   // 다음 장소까지의 거리 계산
   let distanceToNext = null;
-  if (next_place && userLocation) {
+  if (nextPlace && userLocation) {
     distanceToNext = calculateDistanceMeters(
       userLocation.lat,
       userLocation.lng,
-      next_place.lat,
-      next_place.lng
+      nextPlace.lat,
+      nextPlace.lng
     );
   }
 
@@ -154,7 +134,7 @@ export default function CourseActivePage() {
           <ChevronLeft size={22} />
         </button>
         <div className="st-topbar-title" style={{ fontSize: 17, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {data.course_name}
+          {courseName}
         </div>
       </div>
 
@@ -168,7 +148,7 @@ export default function CourseActivePage() {
               스탬프 진행 현황
             </span>
             <span style={{ fontSize: 14, fontWeight: 800, color: COLORS.seal }}>
-              {stampedCount} / {total_places} 개 ({progressPercent}%)
+              {stampedCount} / {totalPlaces} 개 ({progressPercent}%)
             </span>
           </div>
 
@@ -201,8 +181,8 @@ export default function CourseActivePage() {
         <div style={{ marginBottom: 14 }}>
           <CourseMap
             places={places}
-            stampedPlaceIds={stamped_course_place_ids}
-            nextPlace={next_place}
+            stampedPlaceIds={stampedCoursePlaceIds}
+            nextPlace={nextPlace}
             userLocation={userLocation}
           />
         </div>
@@ -247,7 +227,7 @@ export default function CourseActivePage() {
         </div>
 
         {/* 4. 다음 목표 장소 안내 카드 */}
-        {!isCompleted && next_place && (
+        {!isCompleted && nextPlace && (
           <div
             className="st-card"
             style={{
@@ -270,16 +250,16 @@ export default function CourseActivePage() {
                 NEXT GOAL
               </span>
               <span style={{ fontSize: 14, fontWeight: 800, color: COLORS.ink }}>
-                {next_place.visit_order}. {next_place.name}
+                {nextPlace.visitOrder}. {nextPlace.name}
               </span>
             </div>
 
-            {next_place.image_url && (
+            {nextPlace.imageUrl && (
               <div
                 style={{
                   height: 120,
                   borderRadius: 12,
-                  backgroundImage: `url(${next_place.image_url})`,
+                  backgroundImage: `url(${nextPlace.imageUrl})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                   marginBottom: 10,
@@ -287,9 +267,11 @@ export default function CourseActivePage() {
               />
             )}
 
-            <p style={{ fontSize: 13, color: COLORS.inkSoft, margin: "0 0 10px", lineHeight: 1.4 }}>
-              {next_place.description}
-            </p>
+            {nextPlace.description && (
+              <p style={{ fontSize: 13, color: COLORS.inkSoft, margin: "0 0 10px", lineHeight: 1.4 }}>
+                {nextPlace.description}
+              </p>
+            )}
 
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: COLORS.inkSoft }}>
               <MapPin size={14} color={COLORS.seal} />
@@ -305,12 +287,12 @@ export default function CourseActivePage() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {places.map((place) => {
-              const done = stamped_course_place_ids.includes(place.course_place_id);
-              const isCurrent = next_place?.course_place_id === place.course_place_id;
+              const done = stampedCoursePlaceIds.includes(place.coursePlaceId);
+              const isCurrent = nextPlace?.coursePlaceId === place.coursePlaceId;
 
               return (
                 <div
-                  key={place.course_place_id}
+                  key={place.coursePlaceId}
                   className="st-card"
                   style={{
                     display: "flex",
@@ -336,16 +318,18 @@ export default function CourseActivePage() {
                       flexShrink: 0,
                     }}
                   >
-                    {done ? "✓" : place.visit_order}
+                    {done ? "✓" : place.visitOrder}
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: done ? COLORS.inkSoft : COLORS.ink }}>
                       {place.name}
                     </div>
-                    <div style={{ fontSize: 12, color: COLORS.inkSoft, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
-                      {place.description}
-                    </div>
+                    {place.description && (
+                      <div style={{ fontSize: 12, color: COLORS.inkSoft, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                        {place.description}
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ fontSize: 11, fontWeight: 700, color: done ? COLORS.leaf : COLORS.inkSoft, flexShrink: 0 }}>
@@ -371,20 +355,20 @@ export default function CourseActivePage() {
       >
         {isCompleted ? (
           <button
-            className="st-btn"
+            className="st-btn-primary"
             style={{ background: COLORS.leaf }}
-            onClick={() => navigate(`/enrollments/${enrollmentId}/complete`)}
+            onClick={() => navigate(`/courses/${courseId}/enrollments/${enrollmentId}/complete`)}
           >
             <Gift size={18} />
             <span>🎉 코스 완주! 리워드 수령하기</span>
           </button>
         ) : (
           <button
-            className="st-btn"
+            className="st-btn-primary"
             onClick={() =>
-              navigate(`/enrollments/${enrollmentId}/scan`, {
+              navigate(`/courses/${courseId}/enrollments/${enrollmentId}/scan`, {
                 state: {
-                  nextPlace: next_place,
+                  nextPlace,
                   simulatedLocation: userLocation,
                 },
               })

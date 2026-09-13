@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Gift, Calendar, QrCode, X, CheckCircle2, Ticket } from "lucide-react";
+import { Calendar, X, CheckCircle2 } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
-import { rewardsApi, getStoredState, saveStoredState } from "../services/api.js";
+import { rewardsApi } from "../services/api.js";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
@@ -12,7 +12,18 @@ import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
    - 보유 리워드 목록 (미사용 / 사용 완료 탭)
    - 유효기간 및 발급일시 표시
    - 모바일 쿠폰 바코드/QR 제시 모달
+   참고: 백엔드가 매장 사용 완료 처리 API와 교환 코드 필드를 아직 제공하지 않아,
+   "사용완료 처리"는 로컬 상태로만 반영되고(새로고침 시 초기화), 바코드 하단 번호는
+   claimId 기반으로 결정적으로 생성한 10자리 숫자를 mock으로 표시한다.
    ========================================================================== */
+
+// claimId를 시드로 항상 같은 10자리 숫자를 만들어내는 간단한 해시 (진짜 랜덤 대신 안정적으로 표시되도록)
+function mockBarcodeCode(seed) {
+  const s = String(seed);
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return String(h % 10000000000).padStart(10, "0");
+}
 
 export default function RewardsPage() {
   const [mode, setMode] = useState("success");
@@ -42,19 +53,15 @@ export default function RewardsPage() {
     load();
   }, [load]);
 
-  // 사용 완료 토글 (매장 사용 시뮬레이션)
+  // 사용 완료 토글 (매장 사용 시뮬레이션) — 대응하는 백엔드 엔드포인트가 없어 로컬 상태만 변경한다.
   const handleUseReward = (claimId) => {
-    const state = getStoredState();
-    const item = state.rewards.find((r) => r.claim_id === claimId);
-    if (item) {
-      item.status = "used";
-      saveStoredState(state);
-      setRewards([...state.rewards]);
-      setSelectedReward(null);
-    }
+    setRewards((prev) =>
+      prev.map((r) => (r.claimId === claimId ? { ...r, status: "used" } : r))
+    );
+    setSelectedReward(null);
   };
 
-  const filtered = rewards.filter((r) => r.status === tab);
+  const filtered = rewards.filter((r) => r.status?.toLowerCase() === tab);
 
   return (
     <>
@@ -118,11 +125,11 @@ export default function RewardsPage() {
         {status === "success" && filtered.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingBottom: 24 }}>
             {filtered.map((r) => {
-              const isUnused = r.status === "unused";
+              const isUnused = r.status?.toLowerCase() === "unused";
 
               return (
                 <div
-                  key={r.claim_id}
+                  key={r.claimId}
                   className="st-card"
                   style={{
                     display: "flex",
@@ -140,7 +147,7 @@ export default function RewardsPage() {
                       width: 64,
                       height: 64,
                       borderRadius: 14,
-                      backgroundImage: `url(${r.image_url || "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300"})`,
+                      backgroundImage: `url(${r.imageUrl || "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300"})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                       flexShrink: 0,
@@ -149,16 +156,16 @@ export default function RewardsPage() {
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: isUnused ? COLORS.gold : COLORS.inkSoft, marginBottom: 3 }}>
-                      {r.course_title || "코스 완주 리워드"}
+                      {r.courseTitle || "코스 완주 리워드"}
                     </div>
                     <div style={{ fontSize: 15, fontWeight: 800, color: COLORS.ink, marginBottom: 6 }}>
-                      {r.reward_name}
+                      {r.rewardName}
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: COLORS.inkSoft }}>
                       <Calendar size={13} />
                       <span>
-                        {isUnused ? `유효기간: ~${r.valid_until}` : "사용 완료된 쿠폰"}
+                        {isUnused ? `유효기간: ~${r.validUntil}` : "사용 완료된 쿠폰"}
                       </span>
                     </div>
                   </div>
@@ -232,7 +239,7 @@ export default function RewardsPage() {
               STARTON REWARD COUPON
             </div>
             <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.ink, marginBottom: 16 }}>
-              {selectedReward.reward_name}
+              {selectedReward.rewardName}
             </div>
 
             {/* 바코드 / QR 비주얼 영역 */}
@@ -257,18 +264,18 @@ export default function RewardsPage() {
                 }}
               />
               <div style={{ fontFamily: "monospace", fontSize: 14, fontWeight: 800, letterSpacing: "0.1em", color: COLORS.ink }}>
-                {selectedReward.code || "ST-9982-1049"}
+                {mockBarcodeCode(selectedReward.claimId)}
               </div>
             </div>
 
             <div style={{ fontSize: 12, color: COLORS.inkSoft, marginBottom: 20 }}>
               매장 직원에게 위 바코드 또는 쿠폰 번호를 제시해 주세요.<br />
-              유효기간: ~{selectedReward.valid_until}
+              유효기간: ~{selectedReward.validUntil}
             </div>
 
             <button
-              className="st-btn"
-              onClick={() => handleUseReward(selectedReward.claim_id)}
+              className="st-btn-primary"
+              onClick={() => handleUseReward(selectedReward.claimId)}
             >
               <CheckCircle2 size={16} />
               <span>매장 사용 완료 처리하기</span>

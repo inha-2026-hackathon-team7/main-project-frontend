@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Calendar,
-  CheckCircle,
   LogOut,
-  Sparkles,
   User,
-  Compass,
   ArrowRight,
-  RotateCcw,
-  Clock,
 } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
-import { usersApi, resetDemoState } from "../services/api.js";
+import { usersApi } from "../services/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
@@ -23,6 +17,8 @@ import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
    화면 10. 마이페이지 (GET /users/me, GET /users/me/enrollments)
    - 프로필 및 스탬프/완주 코스 통계
    - 내 진행 중/완주 코스 목록 (클릭 시 해당 코스 진행/완주 화면으로 이어하기)
+   참고: 완주 여부는 백엔드 status 문자열의 정확한 표기가 스펙에 없어,
+   completedAt 존재 여부로 판단한다.
    ========================================================================== */
 
 export default function MyPagePage() {
@@ -47,7 +43,7 @@ export default function MyPagePage() {
       }
       const [p, e] = await Promise.all([
         usersApi.me(),
-        usersApi.myEnrollments(filter),
+        usersApi.myEnrollments(),
       ]);
       setProfile(p);
       setEnrollments(e);
@@ -55,7 +51,7 @@ export default function MyPagePage() {
     } catch {
       setStatus("error");
     }
-  }, [mode, filter, user]);
+  }, [mode, user]);
 
   useEffect(() => {
     load();
@@ -66,12 +62,11 @@ export default function MyPagePage() {
     navigate("/login", { replace: true });
   };
 
-  const handleResetData = () => {
-    if (window.confirm("데모 데이터를 초기 상태로 리셋하시겠습니까? (기본 코스 및 진행 상태 복원)")) {
-      resetDemoState();
-      load();
-    }
-  };
+  const filteredEnrollments = enrollments.filter((enr) => {
+    if (filter === "active") return !enr.completedAt;
+    if (filter === "complete") return Boolean(enr.completedAt);
+    return true;
+  });
 
   return (
     <>
@@ -121,25 +116,11 @@ export default function MyPagePage() {
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                    <span style={{ fontSize: 17, fontWeight: 800, color: COLORS.ink }}>
-                      {profile.name || user?.name || "김도장"}
-                    </span>
-                    <span
-                      style={{
-                        background: "rgba(49, 130, 246, 0.1)",
-                        color: COLORS.seal,
-                        fontSize: 11,
-                        fontWeight: 800,
-                        padding: "2px 6px",
-                        borderRadius: 6,
-                      }}
-                    >
-                      {profile.level || "스탬프 마스터"}
-                    </span>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.ink, marginBottom: 2 }}>
+                    {profile.name || user?.name}
                   </div>
                   <div style={{ fontSize: 13, color: COLORS.inkSoft }}>
-                    {profile.email || user?.email || "demo@example.com"}
+                    {profile.email || user?.email}
                   </div>
                 </div>
               </div>
@@ -204,22 +185,22 @@ export default function MyPagePage() {
                 </div>
               </div>
 
-              {enrollments.length === 0 ? (
+              {filteredEnrollments.length === 0 ? (
                 <EmptyState
                   title="참여 중인 코스가 없습니다"
                   desc="코스 둘러보기에서 마음에 드는 코스를 시작해 보세요!"
                 />
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 20 }}>
-                  {enrollments.map((enr) => {
-                    const isActive = enr.status === "active";
+                  {filteredEnrollments.map((enr) => {
+                    const isActive = !enr.completedAt;
                     const percent = Math.round(
                       ((enr.progress?.done || 0) / Math.max(enr.progress?.total || 1, 1)) * 100
                     );
 
                     return (
                       <div
-                        key={enr.enrollment_id}
+                        key={enr.enrollmentId}
                         className="st-card"
                         style={{
                           padding: "16px",
@@ -228,11 +209,8 @@ export default function MyPagePage() {
                           border: isActive ? `1.5px solid ${COLORS.seal}` : "none",
                         }}
                         onClick={() => {
-                          if (isActive) {
-                            navigate(`/enrollments/${enr.enrollment_id}`);
-                          } else {
-                            navigate(`/enrollments/${enr.enrollment_id}/complete`);
-                          }
+                          const base = `/courses/${enr.courseId}/enrollments/${enr.enrollmentId}`;
+                          navigate(isActive ? base : `${base}/complete`);
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -255,7 +233,7 @@ export default function MyPagePage() {
                         </div>
 
                         <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.ink, marginBottom: 10 }}>
-                          {enr.course_name}
+                          {enr.courseName}
                         </div>
 
                         {/* 프로그레스 바 */}
@@ -286,28 +264,6 @@ export default function MyPagePage() {
                   })}
                 </div>
               )}
-            </div>
-
-            {/* 데모 데이터 초기화 버튼 */}
-            <div style={{ marginTop: 20, marginBottom: 30, textAlign: "center" }}>
-              <button
-                onClick={handleResetData}
-                style={{
-                  background: "none",
-                  border: `1px dashed ${COLORS.inkSoft}`,
-                  borderRadius: 8,
-                  padding: "8px 14px",
-                  fontSize: 12,
-                  color: COLORS.inkSoft,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <RotateCcw size={13} />
-                <span>데모 데이터 초기화 (처음 상태로 되돌리기)</span>
-              </button>
             </div>
           </>
         )}

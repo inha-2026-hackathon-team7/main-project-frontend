@@ -73,9 +73,9 @@ export default function CourseMap({
 
     // 1. 장소 마커들
     places.forEach((p, idx) => {
-      const isStamped = stampedPlaceIds.includes(p.course_place_id);
-      const isTarget = nextPlace && nextPlace.course_place_id === p.course_place_id;
-      const order = p.visit_order || idx + 1;
+      const isStamped = stampedPlaceIds.includes(p.coursePlaceId);
+      const isTarget = nextPlace && nextPlace.coursePlaceId === p.coursePlaceId;
+      const order = p.visitOrder || idx + 1;
 
       bounds.push([p.lat, p.lng]);
       polylineCoords.push([p.lat, p.lng]);
@@ -106,10 +106,9 @@ export default function CourseMap({
       marker.bindPopup(`
         <div style="font-family: inherit; font-size: 13px; line-height: 1.4; padding: 2px;">
           <div style="font-weight: 800; font-size: 14px; margin-bottom: 3px; color: ${COLORS.ink};">
-            ${p.visit_order ? p.visit_order + ". " : ""}${p.name}
+            ${p.visitOrder ? p.visitOrder + ". " : ""}${p.name}
           </div>
-          <div style="margin-bottom: 4px;">${statusBadge}</div>
-          <div style="font-size: 12px; color: ${COLORS.inkSoft};">${p.description || ""}</div>
+          <div>${statusBadge}</div>
         </div>
       `);
 

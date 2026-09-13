@@ -14,7 +14,7 @@ export default function AuthPage() {
   const location = useLocation();
 
   const [tab, setTab] = useState("login"); // login | register
-  const [form, setForm] = useState({ email: "demo@example.com", password: "demo1234", passwordConfirm: "", nickname: "" });
+  const [form, setForm] = useState({ email: "", password: "", passwordConfirm: "", nickname: "" });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -29,7 +29,6 @@ export default function AuthPage() {
   const validate = () => {
     const next = {};
     if (tab === "login") {
-      // 데모 로그인: 값이 채워져 있는지만 확인 (실제 형식 검증은 회원가입에서 보여줌)
       if (!form.email) next.email = "이메일을 입력해 주세요";
       if (!form.password) next.password = "비밀번호를 입력해 주세요";
       setErrors(next);
@@ -46,8 +45,8 @@ export default function AuthPage() {
     return Object.keys(next).length === 0;
   };
 
-  const handleAuthed = (u) => {
-    login(u);
+  const handleAuthed = (user, accessToken) => {
+    login(user, accessToken);
     const redirectTo = location.state?.from?.pathname ?? "/courses";
     navigate(redirectTo, { replace: true });
   };
@@ -59,18 +58,17 @@ export default function AuthPage() {
     setSubmitting(true);
     try {
       if (tab === "login") {
-        if (form.email === "fail@test.com") {
-          throw new Error("INVALID_CREDENTIALS");
-        }
         const res = await authApi.login({ email: form.email, password: form.password });
-        handleAuthed(res.user);
+        handleAuthed(res.user, res.accessToken);
       } else {
-        const res = await authApi.register({
+        // 회원가입 응답에는 토큰이 없으므로, 가입 직후 같은 자격증명으로 바로 로그인한다.
+        await authApi.register({
           name: form.nickname,
           email: form.email,
           password: form.password,
         });
-        handleAuthed({ id: res.user_id, name: res.name, email: res.email, role: "user" });
+        const res = await authApi.login({ email: form.email, password: form.password });
+        handleAuthed(res.user, res.accessToken);
       }
     } catch (err) {
       setSubmitError(
@@ -155,21 +153,7 @@ export default function AuthPage() {
           {submitting ? <Loader2 size={17} className="st-spin" /> : null}
           {submitting ? "확인하는 중" : tab === "login" ? "로그인" : "회원가입"}
         </button>
-
-        {tab === "login" && (
-          <button
-            type="button"
-            className="st-btn-ghost"
-            onClick={() => handleAuthed({ email: "guest@example.com", nickname: "게스트" })}
-          >
-            로그인 없이 둘러보기
-          </button>
-        )}
       </form>
-
-      <div style={{ fontSize: 11.5, color: COLORS.inkSoft, textAlign: "center", marginTop: 18 }}>
-        데모: 이메일·비밀번호에 아무 값이나 입력하면 로그인됩니다 (실패 상태는 fail@test.com 으로 확인)
-      </div>
     </div>
   );
 }

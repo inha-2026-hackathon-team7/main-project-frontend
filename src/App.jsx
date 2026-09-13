@@ -26,9 +26,9 @@ export default function App() {
             <Route element={<ProtectedLayout />}>
               <Route path="courses" element={<CourseListPage />} />
               <Route path="courses/:courseId" element={<CourseDetailPage />} />
-              <Route path="enrollments/:enrollmentId" element={<CourseActivePage />} />
-              <Route path="enrollments/:enrollmentId/scan" element={<StampScanPage />} />
-              <Route path="enrollments/:enrollmentId/complete" element={<CourseCompletePage />} />
+              <Route path="courses/:courseId/enrollments/:enrollmentId" element={<CourseActivePage />} />
+              <Route path="courses/:courseId/enrollments/:enrollmentId/scan" element={<StampScanPage />} />
+              <Route path="courses/:courseId/enrollments/:enrollmentId/complete" element={<CourseCompletePage />} />
               <Route path="rewards" element={<RewardsPage />} />
               <Route path="mypage" element={<MyPagePage />} />
             </Route>

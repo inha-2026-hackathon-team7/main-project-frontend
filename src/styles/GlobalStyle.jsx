@@ -6,26 +6,30 @@ import { COLORS } from "../constants/colors.js";
 export default function GlobalStyle() {
   return (
     <style>{`
+    html, body, #root {
+      height: 100%;
+    }
     .st-root {
-      background: ${COLORS.paper};
+      background: ${COLORS.line};
       color: ${COLORS.ink};
       font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
         "Pretendard", "Malgun Gothic", sans-serif;
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       justify-content: center;
-      padding: 24px 12px;
       box-sizing: border-box;
     }
+    /* 430px를 넘는 화면에서는 모바일 레이아웃 폭을 고정하고,
+       좌우 남는 공간은 filler(.st-root 배경)가 채운다 */
     .st-frame {
       width: 100%;
       max-width: 430px;
       background: ${COLORS.paper};
-      border-radius: 28px;
-      box-shadow: 0 1px 2px rgba(25,31,40,0.04), 0 16px 40px rgba(25,31,40,0.12);
-      overflow: hidden;
+      box-shadow: 0 0 0 1px ${COLORS.line};
       position: relative;
-      min-height: 780px;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
     }

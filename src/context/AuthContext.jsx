@@ -1,28 +1,23 @@
 import { createContext, useContext, useMemo, useState } from "react";
+import { clearAuthSession, getAuthSession, setAuthSession } from "../services/authStorage.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem("starton_current_user");
-      return saved ? JSON.parse(saved) : { id: "u_demo123", name: "김도장", email: "demo@example.com", role: "user" };
-    } catch {
-      return { id: "u_demo123", name: "김도장", email: "demo@example.com", role: "user" };
-    }
-  });
+  const [session, setSession] = useState(() => getAuthSession());
 
   const value = useMemo(() => ({
-    user,
-    login: (u) => {
-      setUser(u);
-      try { localStorage.setItem("starton_current_user", JSON.stringify(u)); } catch {}
+    user: session.user,
+    accessToken: session.accessToken,
+    login: (user, accessToken) => {
+      setAuthSession(user, accessToken);
+      setSession({ user, accessToken });
     },
     logout: () => {
-      setUser(null);
-      try { localStorage.removeItem("starton_current_user"); } catch {}
+      clearAuthSession();
+      setSession({ user: null, accessToken: null });
     },
-  }), [user]);
+  }), [session]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

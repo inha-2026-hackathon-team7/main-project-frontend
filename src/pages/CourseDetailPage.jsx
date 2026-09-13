@@ -3,28 +3,28 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ChevronLeft,
   MapPin,
-  Gift,
-  Clock,
-  Navigation,
   Compass,
-  CheckCircle,
   Play,
   ArrowRight,
   Loader2,
-  Calendar,
+  Navigation,
+  Clock,
 } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
 import { coursesApi, enrollmentsApi } from "../services/api.js";
+import { getCurrentPositionSafe, formatDistanceMeters } from "../utils/geolocation.js";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
 import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
 
 /* ============================================================================
-   화면 3. 코스 상세 (GET /courses/{course_id})
+   화면 3. 코스 상세 (GET /courses/{courseId})
    - 포함된 place 순서/목록 및 지도 핀 정보
    - 리워드 안내 (POST /courses/{id}/enrollments 와 연결)
-   - my_enrollment_id 기준 "이어하기" vs "코스 시작하기" CTA 분기
+   - myEnrollmentId 기준 "이어하기" vs "코스 시작하기" CTA 분기
+   - 현재 위치(GPS)를 함께 보내면 서버가 코스까지의 거리(distanceMeters)를 계산해 내려준다
+   - 참고: 코스 카테고리는 스펙에 없어 표시하지 않음
    ========================================================================== */
 
 export default function CourseDetailPage() {
@@ -45,7 +45,8 @@ export default function CourseDetailPage() {
         setStatus("success");
         return;
       }
-      const data = await coursesApi.get(courseId);
+      const position = await getCurrentPositionSafe();
+      const data = await coursesApi.get(courseId, { lat: position?.lat, lng: position?.lng });
       setDetail(data);
       setStatus("success");
     } catch {
@@ -59,15 +60,15 @@ export default function CourseDetailPage() {
 
   // 코스 시작하기 처리 (POST /courses/{id}/enrollments)
   const handleStartCourse = async () => {
-    if (detail?.my_enrollment_id) {
-      navigate(`/enrollments/${detail.my_enrollment_id}`);
+    if (detail?.myEnrollmentId) {
+      navigate(`/courses/${courseId}/enrollments/${detail.myEnrollmentId}`);
       return;
     }
 
     setStarting(true);
     try {
       const res = await enrollmentsApi.start(courseId);
-      navigate(`/enrollments/${res.enrollment_id}`);
+      navigate(`/courses/${courseId}/enrollments/${res.enrollmentId}`);
     } catch (err) {
       alert("코스 시작에 실패했습니다.");
     } finally {
@@ -105,35 +106,38 @@ export default function CourseDetailPage() {
           <>
             {/* 코스 기본 헤더 */}
             <div style={{ marginBottom: 18 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                <span
-                  style={{
-                    background: COLORS.surfaceAlt,
-                    padding: "3px 8px",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: COLORS.inkSoft,
-                  }}
-                >
-                  {detail.region} · {detail.category}
-                </span>
-
-                {detail.is_ordered && (
-                  <span
-                    style={{
-                      background: "rgba(49, 130, 246, 0.1)",
-                      color: COLORS.seal,
-                      padding: "3px 8px",
-                      borderRadius: 6,
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    순서형 코스
-                  </span>
-                )}
-              </div>
+              {(detail.regionName || detail.isOrdered) && (
+                <div style={{ marginBottom: 8, display: "flex", gap: 6 }}>
+                  {detail.regionName && (
+                    <span
+                      style={{
+                        background: COLORS.surfaceAlt,
+                        color: COLORS.inkSoft,
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {detail.regionName}
+                    </span>
+                  )}
+                  {detail.isOrdered && (
+                    <span
+                      style={{
+                        background: "rgba(49, 130, 246, 0.1)",
+                        color: COLORS.seal,
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}
+                    >
+                      순서형 코스
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.ink, marginBottom: 8, lineHeight: 1.3 }}>
                 {detail.name}
@@ -154,20 +158,26 @@ export default function CourseDetailPage() {
                   fontSize: 13,
                   fontWeight: 700,
                   color: COLORS.ink,
+                  flexWrap: "wrap",
+                  rowGap: 8,
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <MapPin size={15} color={COLORS.seal} />
-                  <span>스탬프 {detail.places?.length}곳</span>
+                  <span>스탬프 {detail.places?.length || 0}곳</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <Navigation size={15} color={COLORS.seal} />
-                  <span>{detail.distance || "2.4km"}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <Clock size={15} color={COLORS.seal} />
-                  <span>약 {detail.durationMin || 60}분 소요</span>
-                </div>
+                {formatDistanceMeters(detail.distanceMeters) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <Navigation size={15} color={COLORS.seal} />
+                    <span>{formatDistanceMeters(detail.distanceMeters)}</span>
+                  </div>
+                )}
+                {detail.durationMinutes != null && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <Clock size={15} color={COLORS.seal} />
+                    <span>약 {detail.durationMinutes}분 소요</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -184,13 +194,13 @@ export default function CourseDetailPage() {
                   alignItems: "center",
                 }}
               >
-                {detail.reward.image_url && (
+                {detail.reward.imageUrl && (
                   <div
                     style={{
                       width: 68,
                       height: 68,
                       borderRadius: 12,
-                      backgroundImage: `url(${detail.reward.image_url})`,
+                      backgroundImage: `url(${detail.reward.imageUrl})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                       flexShrink: 0,
@@ -220,7 +230,7 @@ export default function CourseDetailPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {detail.places?.map((p, idx) => (
                   <div
-                    key={p.course_place_id}
+                    key={p.coursePlaceId}
                     className="st-card"
                     style={{ display: "flex", gap: 14, padding: "14px" }}
                   >
@@ -240,28 +250,30 @@ export default function CourseDetailPage() {
                         flexShrink: 0,
                       }}
                     >
-                      {p.visit_order || idx + 1}
+                      {p.visitOrder || idx + 1}
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: COLORS.ink, marginBottom: 4 }}>
                         {p.name}
                       </div>
-                      <div style={{ fontSize: 13, color: COLORS.inkSoft, lineHeight: 1.4, marginBottom: 6 }}>
-                        {p.description}
-                      </div>
+                      {p.description && (
+                        <div style={{ fontSize: 13, color: COLORS.inkSoft, lineHeight: 1.4, marginBottom: 6 }}>
+                          {p.description}
+                        </div>
+                      )}
                       <div style={{ fontSize: 11, color: COLORS.seal, fontWeight: 700 }}>
                         QR 스캔 + GPS 반경 50m 인증
                       </div>
                     </div>
 
-                    {p.image_url && (
+                    {p.imageUrl && (
                       <div
                         style={{
                           width: 56,
                           height: 56,
                           borderRadius: 10,
-                          backgroundImage: `url(${p.image_url})`,
+                          backgroundImage: `url(${p.imageUrl})`,
                           backgroundSize: "cover",
                           backgroundPosition: "center",
                           flexShrink: 0,
@@ -289,16 +301,16 @@ export default function CourseDetailPage() {
           }}
         >
           <button
-            className="st-btn"
+            className="st-btn-primary"
             onClick={handleStartCourse}
             disabled={starting}
             style={{
-              background: detail.my_enrollment_id ? COLORS.seal : COLORS.ink,
+              background: detail.myEnrollmentId ? COLORS.seal : COLORS.ink,
             }}
           >
             {starting ? (
               <Loader2 size={18} className="st-spin" />
-            ) : detail.my_enrollment_id ? (
+            ) : detail.myEnrollmentId ? (
               <Play size={18} />
             ) : (
               <Compass size={18} />
@@ -306,7 +318,7 @@ export default function CourseDetailPage() {
             <span>
               {starting
                 ? "시작하는 중..."
-                : detail.my_enrollment_id
+                : detail.myEnrollmentId
                 ? "이어서 코스 진행하기"
                 : "이 코스 시작하기"}
             </span>

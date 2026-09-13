@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Gift, Eye, Sparkles, User, Award } from "lucide-react";
+import { Search, Gift, Eye, Sparkles, User, Award, MapPin, Clock } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
 import { coursesApi } from "../services/api.js";
+import { getCurrentPositionSafe, formatDistanceMeters } from "../utils/geolocation.js";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
@@ -10,15 +11,17 @@ import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
 
 /* ============================================================================
    화면 2. 코스 목록 (GET /courses)
-   - 공식 / AI / 사용자 코스 필터 (API 명세 type: official/user/ai)
-   - 썸네일, place 미리보기, 리워드 여부 및 조회수 표시
+   - 공식 / AI / 사용자 코스 필터 (API 명세 type: OFFICIAL/USER/AI)
+   - 검색은 서버가 지원하지 않아, 불러온 목록 안에서 제목만 클라이언트에서 필터링한다
+   - 현재 위치(GPS)를 함께 보내면 서버가 코스까지의 거리(distanceMeters)를 계산해 내려준다
+   - 참고: 코스 카테고리는 스펙에 없어 표시하지 않음
    ========================================================================== */
 
 const TYPE_TABS = [
   { id: "all", label: "전체" },
-  { id: "official", label: "공식 코스", icon: Award },
-  { id: "ai", label: "AI 추천", icon: Sparkles },
-  { id: "user", label: "사용자 코스", icon: User },
+  { id: "OFFICIAL", label: "공식 코스", icon: Award },
+  { id: "AI", label: "AI 추천", icon: Sparkles },
+  { id: "USER", label: "사용자 코스", icon: User },
 ];
 
 export default function CourseListPage() {
@@ -38,20 +41,25 @@ export default function CourseListPage() {
         setStatus("success");
         return;
       }
-      const data = await coursesApi.list({ type: activeType, query });
+      const position = await getCurrentPositionSafe();
+      const data = await coursesApi.list({
+        type: activeType === "all" ? undefined : activeType,
+        lat: position?.lat,
+        lng: position?.lng,
+      });
       setCourses(data);
       setStatus("success");
     } catch {
       setStatus("error");
     }
-  }, [mode, activeType, query]);
+  }, [mode, activeType]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const getTypeBadge = (type) => {
-    switch (type) {
+    switch (type?.toLowerCase()) {
       case "official":
         return { label: "공식", bg: COLORS.seal, color: "#fff" };
       case "ai":
@@ -63,6 +71,10 @@ export default function CourseListPage() {
     }
   };
 
+  const filtered = courses.filter(
+    (c) => !query.trim() || c.name.toLowerCase().includes(query.trim().toLowerCase())
+  );
+
   return (
     <>
       <div className="st-topbar">
@@ -72,7 +84,7 @@ export default function CourseListPage() {
       <DevStateSwitcher mode={mode} setMode={setMode} />
 
       <div className="st-scroll">
-        {/* 검색 인풋 */}
+        {/* 검색 인풋 (제목 기준 클라이언트 필터링) */}
         <div style={{ position: "relative", margin: "16px 0 12px" }}>
           <Search
             size={16}
@@ -82,13 +94,13 @@ export default function CourseListPage() {
           <input
             className="st-input"
             style={{ paddingLeft: 36 }}
-            placeholder="지역 또는 코스 이름 검색"
+            placeholder="코스 이름 검색"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
 
-        {/* 코스 유형 필터 탭 (official / user / ai) */}
+        {/* 코스 유형 필터 탭 (OFFICIAL / USER / AI) */}
         <div
           style={{
             display: "flex",
@@ -132,17 +144,18 @@ export default function CourseListPage() {
 
         {status === "error" && <ErrorState onRetry={load} />}
 
-        {status === "success" && courses.length === 0 && (
+        {status === "success" && filtered.length === 0 && (
           <EmptyState
             title="조건에 맞는 코스가 없습니다"
             desc="다른 검색어나 필터를 선택해 보세요."
           />
         )}
 
-        {status === "success" && courses.length > 0 && (
+        {status === "success" && filtered.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14, paddingBottom: 24 }}>
-            {courses.map((c) => {
+            {filtered.map((c) => {
               const badge = getTypeBadge(c.type);
+              const distanceLabel = formatDistanceMeters(c.distanceMeters);
 
               return (
                 <div
@@ -161,7 +174,7 @@ export default function CourseListPage() {
                     style={{
                       height: 140,
                       position: "relative",
-                      backgroundImage: `url(${c.thumbnail_url})`,
+                      backgroundImage: `url(${c.thumbnailUrl})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                     }}
@@ -202,25 +215,27 @@ export default function CourseListPage() {
                       }}
                     >
                       <Eye size={12} />
-                      <span>{c.view_count}</span>
+                      <span>{c.viewCount}</span>
                     </div>
 
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: 10,
-                        left: 10,
-                        background: "rgba(0,0,0,0.65)",
-                        backdropFilter: "blur(4px)",
-                        color: "#fff",
-                        padding: "3px 8px",
-                        borderRadius: 6,
-                        fontSize: 11,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {c.region} · {c.category}
-                    </div>
+                    {c.regionName && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: 10,
+                          left: 10,
+                          background: "rgba(0,0,0,0.65)",
+                          backdropFilter: "blur(4px)",
+                          color: "#fff",
+                          padding: "3px 8px",
+                          borderRadius: 6,
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {c.regionName}
+                      </div>
+                    )}
                   </div>
 
                   {/* 카드 본문 */}
@@ -229,25 +244,34 @@ export default function CourseListPage() {
                       {c.name}
                     </div>
 
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        fontSize: 12,
-                        color: COLORS.inkSoft,
-                        marginBottom: 10,
-                      }}
-                    >
-                      <span>장소 {c.total_places}곳</span>
-                      <span>·</span>
-                      <span>{c.distance}</span>
-                      <span>·</span>
-                      <span>약 {c.durationMin}분</span>
-                    </div>
+                    {(distanceLabel || c.durationMinutes != null) && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          fontSize: 12,
+                          color: COLORS.inkSoft,
+                          marginBottom: 10,
+                        }}
+                      >
+                        {distanceLabel && (
+                          <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                            <MapPin size={12} />
+                            {distanceLabel}
+                          </span>
+                        )}
+                        {c.durationMinutes != null && (
+                          <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                            <Clock size={12} />
+                            약 {c.durationMinutes}분
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {/* 리워드 배지 (요구사항: 리워드 여부) */}
-                    {c.reward_summary && (
+                    {c.rewardSummary?.name && (
                       <div
                         style={{
                           display: "inline-flex",
@@ -262,7 +286,7 @@ export default function CourseListPage() {
                         }}
                       >
                         <Gift size={13} />
-                        <span>리워드: {c.reward_summary}</span>
+                        <span>리워드: {c.rewardSummary.name}</span>
                       </div>
                     )}
                   </div>
