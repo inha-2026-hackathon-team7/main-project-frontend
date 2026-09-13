@@ -4,3 +4,4 @@ dist
 *.local
 .env
 .claude
+build_image.sh
