@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertCircle, ChevronLeft, Loader2, MapPin, X } from "lucide-react";
+import { AlertCircle, ArrowDownUp, ChevronLeft, Loader2, MapPin, Shuffle, X } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
 import { coursesApi, organizationsApi } from "../services/api.js";
 import PlacePickerMap from "../components/map/PlacePickerMap.jsx";
@@ -25,6 +25,7 @@ export default function CreateCoursePage() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [isOrdered, setIsOrdered] = useState(true);
   const [selectedPlaceIds, setSelectedPlaceIds] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -69,6 +70,7 @@ export default function CreateCoursePage() {
         organizationId,
         name: name.trim(),
         description: description.trim() || undefined,
+        isOrdered,
         placeIds: selectedPlaceIds,
       });
       navigate(`/create-course/${organizationId}/complete`, { state: { course } });
@@ -121,6 +123,37 @@ export default function CreateCoursePage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label className="st-label">방문 순서</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  className="st-chip"
+                  data-active={isOrdered}
+                  style={{ flex: 1, justifyContent: "center" }}
+                  onClick={() => setIsOrdered(true)}
+                >
+                  <ArrowDownUp size={14} />
+                  <span>순서대로 방문</span>
+                </button>
+                <button
+                  type="button"
+                  className="st-chip"
+                  data-active={!isOrdered}
+                  style={{ flex: 1, justifyContent: "center" }}
+                  onClick={() => setIsOrdered(false)}
+                >
+                  <Shuffle size={14} />
+                  <span>자유롭게 방문</span>
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: COLORS.inkSoft, margin: "8px 0 0" }}>
+                {isOrdered
+                  ? "아래에서 선택한 순서대로 방문해야 스탬프가 인정돼요."
+                  : "순서와 관계없이 아무 장소나 방문해서 스탬프를 모을 수 있어요."}
+              </p>
             </div>
 
             <div style={{ marginBottom: 12 }}>

@@ -54,11 +54,12 @@ export const coursesApi = {
   },
 
   // POST /courses — 사용자가 직접 코스를 만들어 즉시 게시한다 (리워드 없음, type=user)
-  async create({ organizationId, name, description, placeIds }) {
+  async create({ organizationId, name, description, isOrdered, placeIds }) {
     const { data } = await httpClient.post("/courses", {
       organizationId,
       name,
       description,
+      isOrdered,
       placeIds,
     });
     return data; // UserCourseDetailResponse

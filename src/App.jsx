@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { SnackbarProvider } from "./context/SnackbarContext.jsx";
 import RootLayout from "./layouts/RootLayout.jsx";
 import ProtectedLayout from "./layouts/ProtectedLayout.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
@@ -19,30 +20,32 @@ import CreateCourseCompletePage from "./pages/CreateCourseCompletePage.jsx";
    ========================================================================== */
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<RootLayout />}>
-            <Route index element={<Navigate to="/courses" replace />} />
-            <Route path="login" element={<AuthPage />} />
+    <SnackbarProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<RootLayout />}>
+              <Route index element={<Navigate to="/courses" replace />} />
+              <Route path="login" element={<AuthPage />} />
 
-            <Route element={<ProtectedLayout />}>
-              <Route path="courses" element={<CourseListPage />} />
-              <Route path="courses/:courseId" element={<CourseDetailPage />} />
-              <Route path="courses/:courseId/enrollments/:enrollmentId" element={<CourseActivePage />} />
-              <Route path="courses/:courseId/enrollments/:enrollmentId/scan" element={<StampScanPage />} />
-              <Route path="courses/:courseId/enrollments/:enrollmentId/complete" element={<CourseCompletePage />} />
-              <Route path="rewards" element={<RewardsPage />} />
-              <Route path="mypage" element={<MyPagePage />} />
-              <Route path="create-course" element={<PickOrganizationPage />} />
-              <Route path="create-course/:organizationId" element={<CreateCoursePage />} />
-              <Route path="create-course/:organizationId/complete" element={<CreateCourseCompletePage />} />
+              <Route element={<ProtectedLayout />}>
+                <Route path="courses" element={<CourseListPage />} />
+                <Route path="courses/:courseId" element={<CourseDetailPage />} />
+                <Route path="courses/:courseId/enrollments/:enrollmentId" element={<CourseActivePage />} />
+                <Route path="courses/:courseId/enrollments/:enrollmentId/scan" element={<StampScanPage />} />
+                <Route path="courses/:courseId/enrollments/:enrollmentId/complete" element={<CourseCompletePage />} />
+                <Route path="rewards" element={<RewardsPage />} />
+                <Route path="mypage" element={<MyPagePage />} />
+                <Route path="create-course" element={<PickOrganizationPage />} />
+                <Route path="create-course/:organizationId" element={<CreateCoursePage />} />
+                <Route path="create-course/:organizationId/complete" element={<CreateCourseCompletePage />} />
+              </Route>
+
+              <Route path="*" element={<Navigate to="/courses" replace />} />
             </Route>
-
-            <Route path="*" element={<Navigate to="/courses" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </SnackbarProvider>
   );
 }
