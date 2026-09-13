@@ -146,6 +146,27 @@ export default function GlobalStyle() {
     .st-input::placeholder { color: #B0B8C1; }
     .st-input[data-error="true"] { border-color: ${COLORS.danger}; }
 
+    .st-textarea {
+      width: 100%;
+      min-height: 96px;
+      background: ${COLORS.surfaceAlt};
+      border: 1.5px solid transparent;
+      border-radius: 14px;
+      padding: 14px 15px;
+      font-size: 15px;
+      font-family: inherit;
+      color: ${COLORS.ink};
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .st-textarea:focus-visible, .st-textarea:focus {
+      outline: none;
+      border-color: ${COLORS.seal};
+      background: ${COLORS.surface};
+    }
+    .st-textarea::placeholder { color: #B0B8C1; }
+    .st-textarea[data-error="true"] { border-color: ${COLORS.danger}; }
+
     .st-label {
       font-size: 12.5px;
       font-weight: 700;
@@ -270,6 +291,11 @@ export default function GlobalStyle() {
       color: #ffffff;
       transform: scale(1.15);
       animation: st-pin-bounce 1.4s infinite ease-in-out;
+    }
+    .st-map-pin.selected {
+      background: ${COLORS.seal};
+      border-color: #ffffff;
+      color: #ffffff;
     }
     .st-user-marker {
       width: 18px;

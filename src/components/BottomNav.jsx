@@ -1,8 +1,9 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Compass, Gift, User } from "lucide-react";
+import { Compass, Gift, MapPinned, User } from "lucide-react";
 
 const ITEMS = [
   { k: "courses", label: "코스", icon: Compass, path: "/courses" },
+  { k: "createCourse", label: "코스 만들기", icon: MapPinned, path: "/create-course" },
   { k: "rewards", label: "리워드함", icon: Gift, path: "/rewards" },
   { k: "mypage", label: "마이페이지", icon: User, path: "/mypage" },
 ];

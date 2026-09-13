@@ -52,6 +52,34 @@ export const coursesApi = {
     });
     return data; // UserCourseDetailResponse (regionName/distanceMeters/durationMinutes 포함)
   },
+
+  // POST /courses — 사용자가 직접 코스를 만들어 즉시 게시한다 (리워드 없음, type=user)
+  async create({ organizationId, name, description, placeIds }) {
+    const { data } = await httpClient.post("/courses", {
+      organizationId,
+      name,
+      description,
+      placeIds,
+    });
+    return data; // UserCourseDetailResponse
+  },
+};
+
+// ----------------------------------------------------------------------------
+// 2-1. Organizations API (코스 만들기 — 조직 선택, 조직의 장소 목록)
+// ----------------------------------------------------------------------------
+export const organizationsApi = {
+  // GET /organizations
+  async list() {
+    const { data } = await httpClient.get("/organizations");
+    return data; // [{ id, name, type }]
+  },
+
+  // GET /organizations/{organizationId}/places — qrcodeString은 내려오지 않는다(공개 API)
+  async listPlaces(organizationId) {
+    const { data } = await httpClient.get(`/organizations/${organizationId}/places`);
+    return data; // [{ id, name, category, description, imageUrl, latitude, longitude, regionId, regionName }]
+  },
 };
 
 // ----------------------------------------------------------------------------

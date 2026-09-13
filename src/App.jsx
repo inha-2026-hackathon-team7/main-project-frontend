@@ -10,6 +10,9 @@ import StampScanPage from "./pages/StampScanPage.jsx";
 import CourseCompletePage from "./pages/CourseCompletePage.jsx";
 import RewardsPage from "./pages/RewardsPage.jsx";
 import MyPagePage from "./pages/MyPagePage.jsx";
+import PickOrganizationPage from "./pages/PickOrganizationPage.jsx";
+import CreateCoursePage from "./pages/CreateCoursePage.jsx";
+import CreateCourseCompletePage from "./pages/CreateCourseCompletePage.jsx";
 
 /* ============================================================================
    루트 컴포넌트
@@ -31,6 +34,9 @@ export default function App() {
               <Route path="courses/:courseId/enrollments/:enrollmentId/complete" element={<CourseCompletePage />} />
               <Route path="rewards" element={<RewardsPage />} />
               <Route path="mypage" element={<MyPagePage />} />
+              <Route path="create-course" element={<PickOrganizationPage />} />
+              <Route path="create-course/:organizationId" element={<CreateCoursePage />} />
+              <Route path="create-course/:organizationId/complete" element={<CreateCourseCompletePage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/courses" replace />} />
