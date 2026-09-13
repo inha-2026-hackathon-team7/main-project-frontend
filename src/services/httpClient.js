@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getAuthSession } from "./authStorage.js";
+import { camelizeKeys } from "../utils/caseConvert.js";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
@@ -17,12 +18,18 @@ httpClient.interceptors.request.use((config) => {
   return config;
 });
 
-// 에러 응답을 {status, message, data} 형태로 통일해서 각 서비스 함수가 try/catch 없이 쓸 수 있게 한다.
+// 응답 바디의 키를 전부 camelCase로 정규화한다.
+// 백엔드가 DTO마다 camelCase/snake_case를 섞어 내려보내는 게 확인되어(access_token,
+// enrollment_id, thumbnail_url 등), 프론트는 항상 camelCase만 다루도록 여기서 흡수한다.
+// 에러 응답도 {status, message, data} 형태로 통일해서 각 서비스 함수가 try/catch 없이 쓸 수 있게 한다.
 httpClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    if (res.data) res.data = camelizeKeys(res.data);
+    return res;
+  },
   (err) => {
     const status = err.response?.status ?? 0;
-    const data = err.response?.data;
+    const data = err.response?.data ? camelizeKeys(err.response.data) : err.response?.data;
     const message =
       data?.message || data?.error || err.message || "요청 처리 중 오류가 발생했습니다.";
     const normalized = new Error(message);
