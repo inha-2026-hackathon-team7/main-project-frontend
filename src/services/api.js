@@ -34,9 +34,14 @@ export const authApi = {
   },
 
   // POST /auth/login
+  // 주의: 실제 서버 응답은 스펙 문서(accessToken)와 달리 access_token(snake_case)으로 내려온다.
+  // 두 형태를 모두 받아들여 accessToken으로 정규화한다.
   async login({ email, password }) {
     const { data } = await httpClient.post("/auth/login", { email, password });
-    return data; // { accessToken, user: { id, name, role } }
+    return {
+      accessToken: data.accessToken ?? data.access_token,
+      user: data.user,
+    };
   },
 };
 
