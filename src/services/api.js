@@ -3,7 +3,10 @@ import httpClient from "./httpClient.js";
 /* ============================================================================
    StartOn API 서비스 레이어
    - 백엔드 OpenAPI 스펙(/admin/** 제외)에 맞춰 실제 HTTP 호출을 수행한다.
-   - 모든 응답/요청 필드는 camelCase로 통일한다 (백엔드도 camelCase).
+   - 백엔드는 spring.jackson.property-naming-strategy=SNAKE_CASE로 설정되어 있어
+     실제 요청/응답 바디는 snake_case다. httpClient.js가 요청 시 camelCase -> snake_case,
+     응답 시 snake_case -> camelCase 변환을 자동으로 해주므로, 이 파일과 그 아래
+     컴포넌트들은 신경 쓰지 않고 항상 camelCase만 쓰면 된다.
    ========================================================================== */
 
 // Haversine 거리 계산 (미터 단위) — 클라이언트에서 GPS 반경 안내용으로만 사용
@@ -34,8 +37,6 @@ export const authApi = {
   },
 
   // POST /auth/login
-  // (백엔드가 실제로는 access_token처럼 snake_case로 내려보내는 필드가 있는데,
-  // httpClient의 응답 인터셉터가 전부 camelCase로 정규화해주므로 여기선 신경 쓸 필요 없다.)
   async login({ email, password }) {
     const { data } = await httpClient.post("/auth/login", { email, password });
     return data; // { accessToken, user: { id, name, role } }
