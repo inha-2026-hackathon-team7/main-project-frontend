@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Calendar, X, CheckCircle2 } from "lucide-react";
+import { Calendar, X, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
 import { rewardsApi } from "../services/api.js";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
@@ -11,14 +11,9 @@ import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
    화면 9. 리워드함 (GET /users/me/reward-claims)
    - 보유 리워드 목록 (미사용 / 사용 완료 탭)
    - 유효기간 및 발급일시 표시
-   - 모바일 쿠폰 바코드/QR 제시 모달
-   참고: 백엔드가 매장 사용 완료 처리 API와 교환 코드 필드를 아직 제공하지 않아,
-   "사용완료 처리"는 로컬 상태로만 반영되고(새로고침 시 초기화), 바코드 하단 번호는
-   claimId 기반으로 결정적으로 생성한 10자리 숫자를 mock으로 표시한다.
-   status 값은 실제로 "claimed"(수령 직후, 사용 가능)로 내려오는 것을 확인했고
-   "사용완료"에 해당하는 실제 문자열은 아직 관측되지 않아, 일단 "used"라고 가정하고
-   그 외 값은 전부 미사용으로 취급한다. 실제 사용완료 상태를 보게 되면 값을 확인해서
-   isRewardUsed()만 고치면 된다.
+   - 모바일 쿠폰 바코드/QR 제시 모달 + 매장 사용 처리 (POST /reward-claims/{claimId}/redeem)
+   참고: redeem 성공 시 서버가 status를 "used"로 바꿔주는 것으로 확인됨. 바코드 하단 번호는
+   교환 코드 필드가 없어 claimId 기반으로 결정적으로 생성한 10자리 숫자를 mock으로 표시한다.
    ========================================================================== */
 
 // claimId를 시드로 항상 같은 10자리 숫자를 만들어내는 간단한 해시 (진짜 랜덤 대신 안정적으로 표시되도록)
@@ -33,12 +28,29 @@ function isRewardUsed(status) {
   return status?.toLowerCase() === "used";
 }
 
+// redeem 실패 응답의 에러 코드(REWARD_CLAIM_NOT_FOUND/ALREADY_USED/EXPIRED)를 안내 문구로 변환
+function describeRedeemError(err) {
+  const code = err?.data?.code || err?.data?.error;
+  if (err?.status === 404 || code === "REWARD_CLAIM_NOT_FOUND") {
+    return "본인 소유의 리워드가 아닙니다.";
+  }
+  if (code === "REWARD_CLAIM_ALREADY_USED") {
+    return "이미 사용된 리워드입니다.";
+  }
+  if (code === "REWARD_CLAIM_EXPIRED") {
+    return "유효기간이 지난 리워드입니다.";
+  }
+  return err?.message || "리워드 사용 처리에 실패했습니다.";
+}
+
 export default function RewardsPage() {
   const [mode, setMode] = useState("success");
   const [status, setStatus] = useState("idle");
   const [rewards, setRewards] = useState([]);
   const [tab, setTab] = useState("unused"); // unused | used
   const [selectedReward, setSelectedReward] = useState(null);
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemError, setRedeemError] = useState(null);
 
   const load = useCallback(async () => {
     setStatus("loading");
@@ -61,12 +73,26 @@ export default function RewardsPage() {
     load();
   }, [load]);
 
-  // 사용 완료 토글 (매장 사용 시뮬레이션) — 대응하는 백엔드 엔드포인트가 없어 로컬 상태만 변경한다.
-  const handleUseReward = (claimId) => {
-    setRewards((prev) =>
-      prev.map((r) => (r.claimId === claimId ? { ...r, status: "used" } : r))
-    );
+  // 매장 사용 완료 처리 (POST /reward-claims/{claimId}/redeem)
+  const handleUseReward = async (claimId) => {
+    setRedeeming(true);
+    setRedeemError(null);
+    try {
+      await rewardsApi.redeem(claimId);
+      setRewards((prev) =>
+        prev.map((r) => (r.claimId === claimId ? { ...r, status: "used" } : r))
+      );
+      setSelectedReward(null);
+    } catch (err) {
+      setRedeemError(describeRedeemError(err));
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
+  const closeModal = () => {
     setSelectedReward(null);
+    setRedeemError(null);
   };
 
   const filtered = rewards.filter((r) =>
@@ -231,7 +257,7 @@ export default function RewardsPage() {
             }}
           >
             <button
-              onClick={() => setSelectedReward(null)}
+              onClick={closeModal}
               style={{
                 position: "absolute",
                 top: 14,
@@ -283,12 +309,26 @@ export default function RewardsPage() {
               유효기간: ~{selectedReward.validUntil}
             </div>
 
+            {redeemError && (
+              <div
+                style={{
+                  display: "flex", gap: 6, alignItems: "flex-start", fontSize: 12.5, color: COLORS.danger,
+                  background: "rgba(240,68,82,0.08)", borderRadius: 10, padding: "10px 12px",
+                  marginBottom: 14, textAlign: "left",
+                }}
+              >
+                <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                <span>{redeemError}</span>
+              </div>
+            )}
+
             <button
               className="st-btn-primary"
               onClick={() => handleUseReward(selectedReward.claimId)}
+              disabled={redeeming}
             >
-              <CheckCircle2 size={16} />
-              <span>매장 사용 완료 처리하기</span>
+              {redeeming ? <Loader2 size={16} className="st-spin" /> : <CheckCircle2 size={16} />}
+              <span>{redeeming ? "처리 중..." : "매장 사용 완료 처리하기"}</span>
             </button>
           </div>
         </div>

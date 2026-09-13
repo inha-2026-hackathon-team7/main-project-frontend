@@ -7,6 +7,8 @@ import {
   CheckCircle2,
   Gift,
   LocateFixed,
+  XCircle,
+  Loader2,
 } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
 import { enrollmentsApi, calculateDistanceMeters } from "../services/api.js";
@@ -32,6 +34,7 @@ export default function CourseActivePage() {
   const [data, setData] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [locationSimulated, setLocationSimulated] = useState(false);
+  const [abandoning, setAbandoning] = useState(false);
 
   // 진행 데이터 조회
   const loadData = useCallback(async () => {
@@ -77,6 +80,28 @@ export default function CourseActivePage() {
         lng: target.lng + 0.0001,
       });
       setLocationSimulated(true);
+    }
+  };
+
+  // 코스 포기하기 (POST /enrollments/{id}/abandon) — 멱등이라 두 번 눌러도 안전하지만
+  // 실수 클릭 방지를 위해 확인창을 거친다.
+  const handleAbandon = async () => {
+    if (!window.confirm("정말 이 코스를 포기하시겠어요? 지금까지 모은 스탬프 기록은 사라집니다.")) {
+      return;
+    }
+    setAbandoning(true);
+    try {
+      await enrollmentsApi.abandon(enrollmentId);
+      navigate("/courses");
+    } catch (err) {
+      const code = err?.data?.code || err?.data?.error;
+      alert(
+        code === "ENROLLMENT_ALREADY_ENDED"
+          ? "이미 완주했거나 종료된 코스는 포기할 수 없습니다."
+          : err.message || "코스 포기에 실패했습니다."
+      );
+    } finally {
+      setAbandoning(false);
     }
   };
 
@@ -340,6 +365,31 @@ export default function CourseActivePage() {
             })}
           </div>
         </div>
+
+        {/* 6. 코스 포기하기 */}
+        {!isCompleted && (
+          <div style={{ marginTop: 22, textAlign: "center" }}>
+            <button
+              onClick={handleAbandon}
+              disabled={abandoning}
+              style={{
+                background: "none",
+                border: "none",
+                color: COLORS.danger,
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                padding: 6,
+              }}
+            >
+              {abandoning ? <Loader2 size={13} className="st-spin" /> : <XCircle size={13} />}
+              <span>{abandoning ? "포기하는 중..." : "코스 포기하기"}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 하단 플로팅 CTA 버튼 */}

@@ -53,6 +53,16 @@ export default function CourseCompletePage() {
     try {
       const data = await enrollmentsApi.getWithCourse(enrollmentId);
       setEnrollment(data);
+
+      // 이미 이 코스 리워드를 받은 적이 있는지 확인 — 백엔드는 unique 제약으로 중복 수령을
+      // 막아주지만, 프론트에서도 버튼을 막아 무한 클릭/무의미한 요청을 방지한다.
+      try {
+        const myRewards = await rewardsApi.myRewards();
+        const existing = myRewards.find((r) => r.courseId === data.courseId);
+        if (existing) setClaimResult(existing);
+      } catch {
+        // 리워드함 조회 실패는 치명적이지 않으니 무시하고 수령 버튼은 그대로 노출한다.
+      }
     } catch (e) {
       setError("코스 정보를 불러올 수 없습니다.");
     } finally {

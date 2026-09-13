@@ -114,6 +114,13 @@ export const enrollmentsApi = {
     });
     return data; // { stampId, placeName, stampedAt, progress: {done, total}, courseCompleted }
   },
+
+  // POST /enrollments/{enrollmentId}/abandon — 코스 포기
+  // 멱등: 이미 ABANDONED면 그대로 반환. COMPLETE 상태는 409 ENROLLMENT_ALREADY_ENDED.
+  async abandon(enrollmentId) {
+    const { data } = await httpClient.post(`/enrollments/${enrollmentId}/abandon`);
+    return data;
+  },
 };
 
 // ----------------------------------------------------------------------------
@@ -134,8 +141,12 @@ export const rewardsApi = {
     return data; // UserRewardClaimItem[]
   },
 
-  // 매장 사용 완료 처리에 대응하는 백엔드 엔드포인트가 없어 로컬 상태로만 표시한다.
-  // (새로고침하면 다시 미사용으로 보임 — 백엔드에 반영 필요)
+  // POST /reward-claims/{claimId}/redeem — 매장에서 리워드 사용 처리 (status -> "used")
+  // 404 REWARD_CLAIM_NOT_FOUND(본인 소유 아님), 409 REWARD_CLAIM_ALREADY_USED, 409 REWARD_CLAIM_EXPIRED
+  async redeem(claimId) {
+    const { data } = await httpClient.post(`/reward-claims/${claimId}/redeem`);
+    return data;
+  },
 };
 
 // ----------------------------------------------------------------------------
