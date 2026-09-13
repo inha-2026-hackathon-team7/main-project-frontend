@@ -31,7 +31,6 @@ export default function StampScanPage() {
   const locationState = useLocation().state || {};
 
   const nextPlace = locationState.nextPlace;
-  const initialSimulatedLocation = locationState.simulatedLocation;
 
   // step: "scan" (화면 5) | "verifying" (화면 6) | "error" (화면 6 에러) | "success" (화면 7)
   const [step, setStep] = useState("scan");
@@ -114,10 +113,10 @@ export default function StampScanPage() {
       try { navigator.vibrate(80); } catch (e) {}
     }
 
-    // 위치 획득 (실제 GPS 또는 코스 진행 화면에서 넘어온 시뮬레이션 위치)
-    let currentCoords = initialSimulatedLocation;
+    // 위치 획득 (실제 GPS)
+    let currentCoords = null;
 
-    if (!currentCoords && "geolocation" in navigator) {
+    if ("geolocation" in navigator) {
       try {
         const pos = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });

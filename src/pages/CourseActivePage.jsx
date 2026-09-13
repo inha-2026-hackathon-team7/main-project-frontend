@@ -6,16 +6,14 @@ import {
   QrCode,
   CheckCircle2,
   Gift,
-  LocateFixed,
   XCircle,
   Loader2,
 } from "lucide-react";
 import { COLORS } from "../constants/colors.js";
-import { enrollmentsApi, calculateDistanceMeters } from "../services/api.js";
+import { enrollmentsApi } from "../services/api.js";
 import CourseMap from "../components/map/CourseMap.jsx";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
-import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
 
 /* ============================================================================
    화면 4. 코스 진행 화면 (GET /enrollments/{id} — course/places/reward 포함 응답)
@@ -29,59 +27,26 @@ export default function CourseActivePage() {
   const { courseId, enrollmentId } = useParams();
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState("success");
   const [status, setStatus] = useState("loading"); // loading | success | error
   const [data, setData] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationSimulated, setLocationSimulated] = useState(false);
   const [abandoning, setAbandoning] = useState(false);
 
   // 진행 데이터 조회
   const loadData = useCallback(async () => {
     setStatus("loading");
     try {
-      if (mode === "error") throw new Error("NETWORK_ERROR");
       const res = await enrollmentsApi.getWithCourse(enrollmentId);
       setData(res);
-
-      // 기본적으로 첫 번째나 다음 목표 장소 근처(30m 안쪽)로 시뮬레이션 위치를 초기에 맞춰둠
-      if (res.nextPlace) {
-        setUserLocation({
-          lat: res.nextPlace.lat - 0.00025, // 약 28m 거리
-          lng: res.nextPlace.lng + 0.00015,
-        });
-      }
       setStatus("success");
     } catch (err) {
       console.error(err);
       setStatus("error");
     }
-  }, [enrollmentId, mode]);
+  }, [enrollmentId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  // 데모 위치 토글 (장소 바로 앞 25m vs 먼 거리 300m)
-  const toggleSimulationDistance = () => {
-    if (!data || !data.nextPlace) return;
-    const target = data.nextPlace;
-    if (locationSimulated) {
-      // 300m 밖 (인증 실패 케이스 테스트용)
-      setUserLocation({
-        lat: target.lat + 0.0028,
-        lng: target.lng + 0.0028,
-      });
-      setLocationSimulated(false);
-    } else {
-      // 25m 이내 (인증 성공 케이스)
-      setUserLocation({
-        lat: target.lat - 0.0002,
-        lng: target.lng + 0.0001,
-      });
-      setLocationSimulated(true);
-    }
-  };
 
   // 코스 포기하기 (POST /enrollments/{id}/abandon) — 멱등이라 두 번 눌러도 안전하지만
   // 실수 클릭 방지를 위해 확인창을 거친다.
@@ -126,7 +91,6 @@ export default function CourseActivePage() {
           <button className="st-iconbtn" onClick={() => navigate(-1)}><ChevronLeft size={22} /></button>
           <div className="st-topbar-title">코스 진행</div>
         </div>
-        <DevStateSwitcher mode={mode} setMode={setMode} />
         <div className="st-scroll">
           <ErrorState onRetry={loadData} />
         </div>
@@ -140,17 +104,6 @@ export default function CourseActivePage() {
   const progressPercent = Math.round((stampedCount / Math.max(totalPlaces, 1)) * 100);
   const isCompleted = Boolean(data.completedAt) || stampedCount >= totalPlaces;
 
-  // 다음 장소까지의 거리 계산
-  let distanceToNext = null;
-  if (nextPlace && userLocation) {
-    distanceToNext = calculateDistanceMeters(
-      userLocation.lat,
-      userLocation.lng,
-      nextPlace.lat,
-      nextPlace.lng
-    );
-  }
-
   return (
     <>
       {/* 상단 네비게이션 헤더 */}
@@ -162,8 +115,6 @@ export default function CourseActivePage() {
           {courseName}
         </div>
       </div>
-
-      <DevStateSwitcher mode={mode} setMode={setMode} />
 
       <div className="st-scroll" style={{ paddingBottom: 100 }}>
         {/* 1. 진행률 카드 */}
@@ -208,50 +159,10 @@ export default function CourseActivePage() {
             places={places}
             stampedPlaceIds={stampedCoursePlaceIds}
             nextPlace={nextPlace}
-            userLocation={userLocation}
           />
         </div>
 
-        {/* 3. 데모 GPS 보조 툴바 */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: COLORS.surfaceAlt,
-            padding: "8px 14px",
-            borderRadius: 12,
-            marginBottom: 14,
-            fontSize: 12,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 5, color: COLORS.inkSoft }}>
-            <LocateFixed size={14} color={COLORS.seal} />
-            <span>GPS: {distanceToNext != null ? `목표까지 ${distanceToNext}m` : "좌표 수신중"}</span>
-            {distanceToNext != null && distanceToNext <= 50 ? (
-              <span style={{ color: COLORS.leaf, fontWeight: 700 }}>(인증 가능 반경)</span>
-            ) : (
-              <span style={{ color: COLORS.danger, fontWeight: 700 }}>(50m 초과)</span>
-            )}
-          </div>
-          <button
-            onClick={toggleSimulationDistance}
-            style={{
-              background: COLORS.surface,
-              border: `1px solid ${COLORS.line}`,
-              borderRadius: 6,
-              padding: "3px 8px",
-              fontSize: 11,
-              fontWeight: 700,
-              color: COLORS.ink,
-              cursor: "pointer",
-            }}
-          >
-            {distanceToNext != null && distanceToNext <= 50 ? "원거리 시뮬(오류 테스트)" : "반경 내 위치로 맞춤"}
-          </button>
-        </div>
-
-        {/* 4. 다음 목표 장소 안내 카드 */}
+        {/* 3. 다음 목표 장소 안내 카드 */}
         {!isCompleted && nextPlace && (
           <div
             className="st-card"
@@ -305,7 +216,7 @@ export default function CourseActivePage() {
           </div>
         )}
 
-        {/* 5. 코스 전체 방문지 목록 */}
+        {/* 4. 코스 전체 방문지 목록 */}
         <div style={{ marginTop: 10 }}>
           <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 10, color: COLORS.ink }}>
             코스 방문 코스 ({places.length}곳)
@@ -366,7 +277,7 @@ export default function CourseActivePage() {
           </div>
         </div>
 
-        {/* 6. 코스 포기하기 */}
+        {/* 5. 코스 포기하기 */}
         {!isCompleted && (
           <div style={{ marginTop: 22, textAlign: "center" }}>
             <button
@@ -417,10 +328,7 @@ export default function CourseActivePage() {
             className="st-btn-primary"
             onClick={() =>
               navigate(`/courses/${courseId}/enrollments/${enrollmentId}/scan`, {
-                state: {
-                  nextPlace,
-                  simulatedLocation: userLocation,
-                },
+                state: { nextPlace },
               })
             }
           >

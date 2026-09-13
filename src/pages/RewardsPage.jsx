@@ -5,7 +5,6 @@ import { rewardsApi } from "../services/api.js";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
-import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
 
 /* ============================================================================
    화면 9. 리워드함 (GET /users/me/reward-claims)
@@ -44,7 +43,6 @@ function describeRedeemError(err) {
 }
 
 export default function RewardsPage() {
-  const [mode, setMode] = useState("success");
   const [status, setStatus] = useState("idle");
   const [rewards, setRewards] = useState([]);
   const [tab, setTab] = useState("unused"); // unused | used
@@ -55,19 +53,13 @@ export default function RewardsPage() {
   const load = useCallback(async () => {
     setStatus("loading");
     try {
-      if (mode === "error") throw new Error("MOCK_ERROR");
-      if (mode === "empty") {
-        setRewards([]);
-        setStatus("success");
-        return;
-      }
       const data = await rewardsApi.myRewards();
       setRewards(data);
       setStatus("success");
     } catch {
       setStatus("error");
     }
-  }, [mode]);
+  }, []);
 
   useEffect(() => {
     load();
@@ -104,8 +96,6 @@ export default function RewardsPage() {
       <div className="st-topbar">
         <div className="st-topbar-title">리워드함</div>
       </div>
-
-      <DevStateSwitcher mode={mode} setMode={setMode} />
 
       <div className="st-scroll">
         {/* 미사용 / 사용완료 탭 */}

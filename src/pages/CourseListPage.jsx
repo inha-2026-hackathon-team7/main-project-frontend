@@ -7,7 +7,6 @@ import { getCurrentPositionSafe, formatDistanceMeters } from "../utils/geolocati
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
-import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
 
 /* ============================================================================
    화면 2. 코스 목록 (GET /courses)
@@ -26,7 +25,6 @@ const TYPE_TABS = [
 
 export default function CourseListPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState("success");
   const [status, setStatus] = useState("loading"); // loading | success | error
   const [courses, setCourses] = useState([]);
   const [query, setQuery] = useState("");
@@ -35,12 +33,6 @@ export default function CourseListPage() {
   const load = useCallback(async () => {
     setStatus("loading");
     try {
-      if (mode === "error") throw new Error("MOCK_ERROR");
-      if (mode === "empty") {
-        setCourses([]);
-        setStatus("success");
-        return;
-      }
       const position = await getCurrentPositionSafe();
       const data = await coursesApi.list({
         type: activeType === "all" ? undefined : activeType,
@@ -52,7 +44,7 @@ export default function CourseListPage() {
     } catch {
       setStatus("error");
     }
-  }, [mode, activeType]);
+  }, [activeType]);
 
   useEffect(() => {
     load();
@@ -80,8 +72,6 @@ export default function CourseListPage() {
       <div className="st-topbar">
         <div className="st-topbar-title">코스 둘러보기</div>
       </div>
-
-      <DevStateSwitcher mode={mode} setMode={setMode} />
 
       <div className="st-scroll">
         {/* 검색 인풋 (제목 기준 클라이언트 필터링) */}

@@ -11,7 +11,6 @@ import { useAuth } from "../context/AuthContext.jsx";
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
-import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
 
 /* ============================================================================
    화면 10. 마이페이지 (GET /users/me, GET /users/me/enrollments)
@@ -25,7 +24,6 @@ export default function MyPagePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState("success");
   const [status, setStatus] = useState("loading"); // loading | success | error
   const [profile, setProfile] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
@@ -34,13 +32,6 @@ export default function MyPagePage() {
   const load = useCallback(async () => {
     setStatus("loading");
     try {
-      if (mode === "error") throw new Error("MOCK_ERROR");
-      if (mode === "empty") {
-        setProfile({ ...user, totalStamps: 0, completedCourses: 0 });
-        setEnrollments([]);
-        setStatus("success");
-        return;
-      }
       const [p, e] = await Promise.all([
         usersApi.me(),
         usersApi.myEnrollments(),
@@ -51,7 +42,7 @@ export default function MyPagePage() {
     } catch {
       setStatus("error");
     }
-  }, [mode, user]);
+  }, []);
 
   useEffect(() => {
     load();
@@ -81,8 +72,6 @@ export default function MyPagePage() {
           <LogOut size={18} color={COLORS.inkSoft} />
         </button>
       </div>
-
-      <DevStateSwitcher mode={mode} setMode={setMode} />
 
       <div className="st-scroll">
         {status === "loading" && (

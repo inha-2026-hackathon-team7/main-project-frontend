@@ -9,23 +9,6 @@ import httpClient from "./httpClient.js";
      컴포넌트들은 신경 쓰지 않고 항상 camelCase만 쓰면 된다.
    ========================================================================== */
 
-// Haversine 거리 계산 (미터 단위) — 클라이언트에서 GPS 반경 안내용으로만 사용
-export function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // Earth radius in meters
-  const toRad = (deg) => (deg * Math.PI) / 180;
-  const φ1 = toRad(lat1);
-  const φ2 = toRad(lat2);
-  const Δφ = toRad(lat2 - lat1);
-  const Δλ = toRad(lon2 - lon1);
-
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return Math.round(R * c);
-}
-
 // ----------------------------------------------------------------------------
 // 1. Auth API
 // ----------------------------------------------------------------------------

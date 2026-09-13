@@ -16,7 +16,6 @@ import { getCurrentPositionSafe, formatDistanceMeters } from "../utils/geolocati
 import LoadingSkeletonList from "../components/common/LoadingSkeletonList.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import EmptyState from "../components/common/EmptyState.jsx";
-import DevStateSwitcher from "../components/common/DevStateSwitcher.jsx";
 
 /* ============================================================================
    화면 3. 코스 상세 (GET /courses/{courseId})
@@ -31,7 +30,6 @@ export default function CourseDetailPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState("success");
   const [status, setStatus] = useState("loading"); // loading | success | error
   const [detail, setDetail] = useState(null);
   const [starting, setStarting] = useState(false);
@@ -39,12 +37,6 @@ export default function CourseDetailPage() {
   const load = useCallback(async () => {
     setStatus("loading");
     try {
-      if (mode === "error") throw new Error("MOCK_ERROR");
-      if (mode === "empty") {
-        setDetail(null);
-        setStatus("success");
-        return;
-      }
       const position = await getCurrentPositionSafe();
       const data = await coursesApi.get(courseId, { lat: position?.lat, lng: position?.lng });
       setDetail(data);
@@ -52,7 +44,7 @@ export default function CourseDetailPage() {
     } catch {
       setStatus("error");
     }
-  }, [mode, courseId]);
+  }, [courseId]);
 
   useEffect(() => {
     load();
@@ -84,8 +76,6 @@ export default function CourseDetailPage() {
         </button>
         <div className="st-topbar-title">코스 상세</div>
       </div>
-
-      <DevStateSwitcher mode={mode} setMode={setMode} />
 
       <div className="st-scroll" style={{ paddingBottom: 90 }}>
         {status === "loading" && (
