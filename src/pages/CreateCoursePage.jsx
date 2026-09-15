@@ -17,7 +17,7 @@ import EmptyState from "../components/common/EmptyState.jsx";
 const MIN_PLACES = 2;
 
 export default function CreateCoursePage() {
-  const { organizationId } = useParams();
+  const { organizationId, regionId } = useParams();
   const navigate = useNavigate();
 
   const [status, setStatus] = useState("loading"); // loading | success | error
@@ -34,13 +34,13 @@ export default function CreateCoursePage() {
   const load = useCallback(async () => {
     setStatus("loading");
     try {
-      const data = await organizationsApi.listPlaces(organizationId);
+      const data = await organizationsApi.listPlaces(organizationId, { regionId });
       setPlaces(data);
       setStatus("success");
     } catch {
       setStatus("error");
     }
-  }, [organizationId]);
+  }, [organizationId, regionId]);
 
   useEffect(() => {
     load();
@@ -73,7 +73,7 @@ export default function CreateCoursePage() {
         isOrdered,
         placeIds: selectedPlaceIds,
       });
-      navigate(`/create-course/${organizationId}/complete`, { state: { course } });
+      navigate(`/create-course/${organizationId}/${regionId}/complete`, { state: { course } });
     } catch (err) {
       setSubmitError(err.message || "코스 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.");
     } finally {
@@ -96,7 +96,7 @@ export default function CreateCoursePage() {
         {status === "error" && <ErrorState onRetry={load} />}
 
         {status === "success" && places.length === 0 && (
-          <EmptyState title="등록된 장소가 없습니다" desc="이 조직에는 아직 코스로 만들 장소가 없어요." />
+          <EmptyState title="등록된 장소가 없습니다" desc="이 지역에는 아직 코스로 만들 장소가 없어요." />
         )}
 
         {status === "success" && places.length > 0 && (

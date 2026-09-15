@@ -8,6 +8,7 @@ export default function GlobalStyle() {
     <style>{`
     html, body, #root {
       height: 100%;
+      margin: 0;
     }
     .st-root {
       background: ${COLORS.line};
@@ -66,6 +67,13 @@ export default function GlobalStyle() {
       flex: 1;
       overflow-y: auto;
       padding: 0 20px 100px;
+    }
+    /* 하단 탭바가 sticky(실제 레이아웃 공간 차지)로 바뀌면서, 탭바가 없던 시절
+       겹침 방지용으로 잡아뒀던 넉넉한 하단 여백이 탭바 높이만큼 이중으로 남는다.
+       탭바가 실제로 다음 형제로 존재하는 화면(코스 목록/리워드함/마이페이지)에서만
+       여백을 좁혀 원래 의도한 간격으로 되돌린다. */
+    .st-scroll:has(+ .st-bottomnav) {
+      padding-bottom: 20px;
     }
 
     .st-card {
@@ -177,8 +185,8 @@ export default function GlobalStyle() {
     .st-fieldmsg { font-size: 12px; color: ${COLORS.danger}; margin-top: 5px; font-weight: 600; }
 
     .st-bottomnav {
-      position: absolute;
-      left: 0; right: 0; bottom: 0;
+      position: sticky;
+      bottom: 0;
       background: ${COLORS.surface};
       box-shadow: 0 -1px 0 rgba(25,31,40,0.05), 0 -8px 24px rgba(25,31,40,0.05);
       display: flex;

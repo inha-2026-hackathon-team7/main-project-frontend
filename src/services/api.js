@@ -76,9 +76,18 @@ export const organizationsApi = {
     return data; // [{ id, name, type }]
   },
 
-  // GET /organizations/{organizationId}/places — qrcodeString은 내려오지 않는다(공개 API)
-  async listPlaces(organizationId) {
-    const { data } = await httpClient.get(`/organizations/${organizationId}/places`);
+  // GET /organizations/{organizationId}/regions
+  async listRegions(organizationId) {
+    const { data } = await httpClient.get(`/organizations/${organizationId}/regions`);
+    return data; // [{ id, name, type, placeCount }]
+  },
+
+  // GET /organizations/{organizationId}/places?region_id= — qrcodeString은 내려오지 않는다(공개 API)
+  // regionId를 넘기면 그 지역에 속한 장소만 내려온다.
+  async listPlaces(organizationId, { regionId } = {}) {
+    const { data } = await httpClient.get(`/organizations/${organizationId}/places`, {
+      params: { region_id: regionId },
+    });
     return data; // [{ id, name, category, description, imageUrl, latitude, longitude, regionId, regionName }]
   },
 };

@@ -12,6 +12,7 @@ import CourseCompletePage from "./pages/CourseCompletePage.jsx";
 import RewardsPage from "./pages/RewardsPage.jsx";
 import MyPagePage from "./pages/MyPagePage.jsx";
 import PickOrganizationPage from "./pages/PickOrganizationPage.jsx";
+import PickRegionPage from "./pages/PickRegionPage.jsx";
 import CreateCoursePage from "./pages/CreateCoursePage.jsx";
 import CreateCourseCompletePage from "./pages/CreateCourseCompletePage.jsx";
 
@@ -37,8 +38,9 @@ export default function App() {
                 <Route path="rewards" element={<RewardsPage />} />
                 <Route path="mypage" element={<MyPagePage />} />
                 <Route path="create-course" element={<PickOrganizationPage />} />
-                <Route path="create-course/:organizationId" element={<CreateCoursePage />} />
-                <Route path="create-course/:organizationId/complete" element={<CreateCourseCompletePage />} />
+                <Route path="create-course/:organizationId" element={<PickRegionPage />} />
+                <Route path="create-course/:organizationId/:regionId" element={<CreateCoursePage />} />
+                <Route path="create-course/:organizationId/:regionId/complete" element={<CreateCourseCompletePage />} />
               </Route>
 
               <Route path="*" element={<Navigate to="/courses" replace />} />
